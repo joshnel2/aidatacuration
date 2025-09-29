@@ -1,4 +1,4 @@
-# DataVault AI - Enterprise Data Intelligence Platform
+# AI Data Curation - Enterprise Data Intelligence Platform
 
 A modern, high-tech website for a business that transforms enterprise data into AI-ready intelligence. The site features an Ethereum-inspired design with comprehensive sections covering data preparation services for employee sentiment, financial analytics, inventory management, and more.
 
@@ -32,14 +32,14 @@ A modern, high-tech website for a business that transforms enterprise data into 
 ## Key Sections
 
 ### 1. Hero Section
-- Compelling value proposition
+- Compelling value proposition for AI Data Curation
 - Interactive data visualization
 - Call-to-action buttons
 - Business statistics
 
 ### 2. Features Section
 - Six key service areas
-- Employee intelligence
+- Employee intelligence and morale data
 - Financial analytics
 - Inventory management
 - Security and compliance
@@ -121,3 +121,7 @@ The contact form includes client-side validation and simulation of form submissi
 ---
 
 *Built with modern web technologies and best practices for optimal user experience and business conversion.*
+
+## About AI Data Curation
+
+AI Data Curation specializes in transforming enterprise data into AI-ready intelligence, including employee morale and sentiment data, financial analytics, inventory management, and comprehensive operational insights.

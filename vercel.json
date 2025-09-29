@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "datavault-ai-website",
+  "name": "ai-data-curation-website",
   "builds": [
     {
       "src": "index.html",

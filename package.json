@@ -1,7 +1,7 @@
 {
-  "name": "datavault-ai-website",
+  "name": "ai-data-curation-website",
   "version": "1.0.0",
-  "description": "High-tech website for DataVault AI - Enterprise Data Intelligence Platform",
+  "description": "High-tech website for AI Data Curation - Enterprise Data Intelligence Platform",
   "main": "index.html",
   "scripts": {
     "start": "npx serve . -p 3000",
@@ -19,7 +19,7 @@
     "financial-data",
     "inventory-management"
   ],
-  "author": "DataVault AI",
+  "author": "AI Data Curation",
   "license": "MIT",
   "repository": {
     "type": "git",
