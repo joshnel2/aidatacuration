@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - AI Data Curation</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-cube"></i>
+                <span>AI Data Curation</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="signup.html" class="nav-link">Sign Up</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sign In Section -->
+    <section class="auth-section">
+        <div class="auth-container">
+            <div class="auth-content signin-layout">
+                <div class="auth-form-container">
+                    <form class="auth-form" id="signinForm">
+                        <div class="auth-header">
+                            <h2>Welcome Back</h2>
+                            <p>Access your business neural network dashboard</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="loginUsername">Username or Email</label>
+                            <input type="text" id="loginUsername" name="loginUsername" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="loginPassword">Password</label>
+                            <input type="password" id="loginPassword" name="loginPassword" required>
+                        </div>
+                        
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="rememberMe" name="rememberMe">
+                                <span class="checkmark"></span>
+                                Remember me
+                            </label>
+                            <a href="#" class="forgot-password">Forgot Password?</a>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary auth-btn">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Sign In
+                        </button>
+                        
+                        <div class="auth-divider">
+                            <span>Or</span>
+                        </div>
+                        
+                        <button type="button" class="btn btn-outline auth-btn demo-btn">
+                            <i class="fas fa-play"></i>
+                            Try Demo Account
+                        </button>
+                        
+                        <div class="auth-footer">
+                            <p>Don't have an account? <a href="signup.html" class="auth-link">Sign Up</a></p>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="auth-visual">
+                    <div class="signin-graphic">
+                        <div class="neural-visualization">
+                            <div class="neural-node node-1">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div class="neural-node node-2">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div class="neural-node node-3">
+                                <i class="fas fa-chart-network"></i>
+                            </div>
+                            <div class="neural-node node-4">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="connection-lines">
+                                <svg width="100%" height="100%" viewBox="0 0 300 300">
+                                    <line x1="50" y1="50" x2="150" y2="150" stroke="url(#gradient1)" stroke-width="2" opacity="0.6"/>
+                                    <line x1="250" y1="50" x2="150" y2="150" stroke="url(#gradient1)" stroke-width="2" opacity="0.6"/>
+                                    <line x1="50" y1="250" x2="150" y2="150" stroke="url(#gradient1)" stroke-width="2" opacity="0.6"/>
+                                    <line x1="250" y1="250" x2="150" y2="150" stroke="url(#gradient1)" stroke-width="2" opacity="0.6"/>
+                                    <defs>
+                                        <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#627eea;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="signin-text">
+                            <h3>Your Business Neural Network Awaits</h3>
+                            <p>Access your AI-powered business intelligence dashboard and continue building your neural network.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - AI Data Curation</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-cube"></i>
+                <span>AI Data Curation</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="signin.html" class="nav-link">Sign In</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sign Up Section -->
+    <section class="auth-section">
+        <div class="auth-container">
+            <div class="auth-content">
+                <div class="auth-header">
+                    <h1>Create Your Neural Network Account</h1>
+                    <p>Start building your business AI with automated data collection and neural network mapping</p>
+                </div>
+                
+                <div class="auth-form-container">
+                    <form class="auth-form" id="signupForm">
+                        <h2>Sign Up</h2>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name</label>
+                                <input type="text" id="firstName" name="firstName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" id="lastName" name="lastName" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="company">Company Name</label>
+                            <input type="text" id="company" name="company" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="companySize">Company Size</label>
+                            <select id="companySize" name="companySize" required>
+                                <option value="">Select company size</option>
+                                <option value="1-10">1-10 employees</option>
+                                <option value="11-50">11-50 employees</option>
+                                <option value="51-200">51-200 employees</option>
+                                <option value="201-1000">201-1000 employees</option>
+                                <option value="1000+">1000+ employees</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="plan">Choose Your Plan</label>
+                            <select id="plan" name="plan" required>
+                                <option value="">Select a plan</option>
+                                <option value="basic-neural">Basic Neural - Document Analysis</option>
+                                <option value="advanced-neural">Advanced Neural - AI Employee Outreach</option>
+                                <option value="enterprise-neural">Enterprise Neural - Human Expert Team</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required>
+                            <div class="password-requirements">
+                                <small>Password must be at least 8 characters long</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required>
+                        </div>
+                        
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="terms" name="terms" required>
+                                <span class="checkmark"></span>
+                                I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a>
+                            </label>
+                        </div>
+                        
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newsletter" name="newsletter">
+                                <span class="checkmark"></span>
+                                Subscribe to our newsletter for AI insights and updates
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary auth-btn">
+                            <i class="fas fa-user-plus"></i>
+                            Create Account
+                        </button>
+                        
+                        <div class="auth-footer">
+                            <p>Already have an account? <a href="signin.html" class="auth-link">Sign In</a></p>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="auth-benefits">
+                    <h3>What you get with your account:</h3>
+                    <div class="benefit-list">
+                        <div class="benefit-item">
+                            <i class="fas fa-brain"></i>
+                            <div>
+                                <h4>Personal Neural Network</h4>
+                                <p>Your own business AI that learns and adapts to your company</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-chart-line"></i>
+                            <div>
+                                <h4>Real-time Analytics</h4>
+                                <p>Monitor your business neural network performance and insights</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-users-cog"></i>
+                            <div>
+                                <h4>AI-Powered Automation</h4>
+                                <p>Automated employee outreach and data collection</p>
+                            </div>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <div>
+                                <h4>Enterprise Security</h4>
+                                <p>Bank-level encryption and data protection</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>
