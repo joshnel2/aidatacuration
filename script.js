@@ -49,25 +49,15 @@ const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.classList.add('animate-in');
-            
-            // Add special effects for specific elements
-            if (entry.target.classList.contains('feature-card')) {
-                setTimeout(() => {
-                    entry.target.style.transform = 'translateY(0) scale(1)';
-                }, 100);
-            }
-            
-            if (entry.target.classList.contains('plan-card')) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'scale(1)';
-            }
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
         }
     });
 }, observerOptions);
 
 // Observe elements for animations
 document.addEventListener('DOMContentLoaded', () => {
-    const animateElements = document.querySelectorAll('.feature-card, .timeline-item, .plan-card');
+    const animateElements = document.querySelectorAll('.timeline-item');
     
     animateElements.forEach(el => {
         el.style.opacity = '0';

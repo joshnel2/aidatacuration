@@ -769,6 +769,9 @@ body {
     text-align: center;
     opacity: 0;
     animation: scaleIn 0.8s ease-out forwards;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .plan-card:nth-child(1) { animation-delay: 0.2s; }
@@ -822,6 +825,7 @@ body {
 .plan-features {
     margin-bottom: var(--spacing-xl);
     text-align: left;
+    flex-grow: 1;
 }
 
 .plan-features h4 {
@@ -864,6 +868,16 @@ body {
     color: var(--primary-color);
     display: block;
     margin-bottom: var(--spacing-xs);
+}
+
+.plan-cta {
+    margin-top: auto;
+    padding-top: var(--spacing-md);
+}
+
+.plan-cta .btn {
+    width: 100%;
+    justify-content: center;
 }
 
 .plans-note {
