@@ -1,0 +1,41 @@
+{
+  "name": "datavault-ai-website",
+  "version": "1.0.0",
+  "description": "High-tech website for DataVault AI - Enterprise Data Intelligence Platform",
+  "main": "index.html",
+  "scripts": {
+    "start": "live-server --port=3000 --open=/",
+    "build": "echo 'No build process required - static HTML site'",
+    "deploy": "echo 'Ready for deployment to any static hosting service'",
+    "validate": "html5validator --root . --show-warnings"
+  },
+  "keywords": [
+    "ai",
+    "data-intelligence",
+    "enterprise",
+    "data-transformation",
+    "business-intelligence",
+    "employee-analytics",
+    "financial-data",
+    "inventory-management"
+  ],
+  "author": "DataVault AI",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "html5validator": "^0.4.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/datavault-ai/website.git"
+  },
+  "homepage": "https://datavault-ai.com",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
