@@ -64,6 +64,9 @@ body {
     color: var(--text-primary);
     background-color: var(--background);
     overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Container */
@@ -83,6 +86,7 @@ body {
     border-bottom: 1px solid var(--border-color);
     z-index: 1000;
     transition: var(--transition-base);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .nav-container {
@@ -182,6 +186,7 @@ body {
     position: relative;
     overflow: hidden;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    padding-top: 70px; /* Account for fixed navbar */
 }
 
 .hero-container {
@@ -1059,6 +1064,7 @@ body {
         transition: var(--transition-base);
         box-shadow: var(--shadow-lg);
         padding: var(--spacing-lg) 0;
+        z-index: 999;
     }
     
     .nav-menu.active {
@@ -1081,13 +1087,30 @@ body {
         transform: translateY(-8px) rotate(-45deg);
     }
     
+    .hero {
+        padding-top: 90px; /* Extra padding for mobile */
+        min-height: calc(100vh - 20px); /* Slight adjustment for mobile */
+    }
+    
+    .hero-container {
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+    
     .hero-title {
         font-size: var(--font-size-4xl);
+        line-height: 1.2;
+        margin-bottom: var(--spacing-lg);
     }
     
     .hero-buttons {
         flex-direction: column;
         align-items: center;
+        gap: var(--spacing-md);
+    }
+    
+    .hero-buttons .btn {
+        width: 100%;
+        max-width: 280px;
     }
     
     .hero-stats {
@@ -1157,16 +1180,38 @@ body {
         padding: 0 var(--spacing-sm);
     }
     
+    .hero {
+        padding-top: 90px;
+        min-height: calc(100vh - 10px);
+    }
+    
     .hero-container {
-        padding: var(--spacing-xl) var(--spacing-sm);
+        padding: var(--spacing-md) var(--spacing-sm);
     }
     
     .hero-title {
         font-size: var(--font-size-3xl);
+        line-height: 1.1;
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .hero-subtitle {
+        font-size: var(--font-size-base);
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .hero-buttons .btn {
+        padding: var(--spacing-sm) var(--spacing-lg);
+        font-size: var(--font-size-sm);
     }
     
     .section-title {
         font-size: var(--font-size-3xl);
+        line-height: 1.2;
+    }
+    
+    .section-subtitle {
+        font-size: var(--font-size-base);
     }
     
     .data-node {
@@ -1180,5 +1225,21 @@ body {
     .central-node {
         width: 100px;
         height: 100px;
+    }
+    
+    .feature-card {
+        padding: var(--spacing-md);
+    }
+    
+    .plan-card {
+        padding: var(--spacing-md);
+    }
+    
+    .timeline-content {
+        padding: var(--spacing-md);
+    }
+    
+    .consultation-form {
+        padding: var(--spacing-md);
     }
 }
