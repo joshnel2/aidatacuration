@@ -39,7 +39,7 @@ window.addEventListener('scroll', () => {
     }
 });
 
-// Intersection Observer for fade-in animations
+// Enhanced Intersection Observer for animations
 const observerOptions = {
     threshold: 0.1,
     rootMargin: '0px 0px -50px 0px'
@@ -48,8 +48,19 @@ const observerOptions = {
 const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
+            entry.target.classList.add('animate-in');
+            
+            // Add special effects for specific elements
+            if (entry.target.classList.contains('feature-card')) {
+                setTimeout(() => {
+                    entry.target.style.transform = 'translateY(0) scale(1)';
+                }, 100);
+            }
+            
+            if (entry.target.classList.contains('plan-card')) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'scale(1)';
+            }
         }
     });
 }, observerOptions);
@@ -183,21 +194,74 @@ function removeNotification(notification) {
     }, 300);
 }
 
-// Add floating animation to data nodes
+// Enhanced data nodes animation with connections
 function animateDataNodes() {
     const nodes = document.querySelectorAll('.data-node');
+    const centralNode = document.querySelector('.central-node');
+    
     nodes.forEach((node, index) => {
-        const delay = index * 1000; // 1 second delay between each node
-        const duration = 6000 + (index * 500); // Slightly different durations
+        const delay = index * 1000;
+        const duration = 6000 + (index * 500);
         
         node.style.animationDelay = `${delay}ms`;
         node.style.animationDuration = `${duration}ms`;
+        
+        // Add hover effect with connection line simulation
+        node.addEventListener('mouseenter', () => {
+            node.style.boxShadow = '0 0 30px rgba(98, 126, 234, 0.5)';
+            if (centralNode) {
+                centralNode.style.boxShadow = '0 0 40px rgba(6, 255, 165, 0.6)';
+            }
+        });
+        
+        node.addEventListener('mouseleave', () => {
+            node.style.boxShadow = '';
+            if (centralNode) {
+                centralNode.style.boxShadow = '';
+            }
+        });
     });
 }
+
+// Add dynamic particle background
+function createParticles() {
+    const hero = document.querySelector('.hero-background');
+    if (!hero) return;
+    
+    for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.style.cssText = `
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(98, 126, 234, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: floatParticle ${15 + Math.random() * 10}s linear infinite;
+            left: ${Math.random() * 100}%;
+            top: ${Math.random() * 100}%;
+            animation-delay: ${Math.random() * 10}s;
+        `;
+        hero.appendChild(particle);
+    }
+}
+
+// Add particle animation keyframe
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes floatParticle {
+        0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
 
 // Initialize animations when page loads
 document.addEventListener('DOMContentLoaded', () => {
     animateDataNodes();
+    createParticles();
     
     // Add hover effects to navigation
     const navLinks = document.querySelectorAll('.nav-link');
