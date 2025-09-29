@@ -1,4 +1,4 @@
-# AI Data Curation - Enterprise Data Intelligence Platform:
+# AI Data Curation - Enterprise Data Intelligence Platform
 
 A modern, high-tech website for a business that transforms enterprise data into AI-ready intelligence. The site features an Ethereum-inspired design with comprehensive sections covering data preparation services for employee sentiment, financial analytics, inventory management, and more.
 
