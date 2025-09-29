@@ -850,6 +850,22 @@ body {
     font-size: var(--font-size-sm);
 }
 
+.plan-type {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--background-alt);
+    border-radius: 10px;
+    text-align: center;
+    border-left: 4px solid var(--primary-color);
+    font-size: var(--font-size-sm);
+}
+
+.plan-type strong {
+    color: var(--primary-color);
+    display: block;
+    margin-bottom: var(--spacing-xs);
+}
+
 .plans-note {
     text-align: center;
     color: var(--text-light);

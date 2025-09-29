@@ -40,4 +40,4 @@ logs
 
 # Temporary files
 .tmp/
-temp/
+temp/core
