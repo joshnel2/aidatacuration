@@ -502,10 +502,11 @@ body {
     border-radius: 20px;
     box-shadow: var(--shadow-md);
     border: 1px solid var(--border-color);
-    transition: var(--transition-base);
+    transition: all var(--transition-base);
     text-align: center;
-    opacity: 0;
-    animation: slideInUp 0.8s ease-out forwards;
+    opacity: 1 !important;
+    transform: translateY(0);
+    visibility: visible !important;
 }
 
 .feature-card:nth-child(1) { animation-delay: 0.1s; }
@@ -516,10 +517,11 @@ body {
 .feature-card:nth-child(6) { animation-delay: 0.6s; }
 
 .feature-card:hover {
-    transform: translateY(-10px);
-    box-shadow: var(--shadow-xl);
-    border-color: var(--primary-color);
-    animation: glow 2s ease-in-out infinite;
+    transform: translateY(-10px) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-color: var(--primary-color) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .feature-icon {
@@ -1116,13 +1118,24 @@ body {
 }
 
 @keyframes slideInUp {
-    from {
+    0% {
         opacity: 0;
         transform: translateY(50px);
     }
-    to {
+    100% {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes featureSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
     }
 }
 
