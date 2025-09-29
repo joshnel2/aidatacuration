@@ -4,10 +4,10 @@
   "description": "High-tech website for DataVault AI - Enterprise Data Intelligence Platform",
   "main": "index.html",
   "scripts": {
-    "start": "live-server --port=3000 --open=/",
+    "start": "npx serve . -p 3000",
     "build": "echo 'No build process required - static HTML site'",
-    "deploy": "echo 'Ready for deployment to any static hosting service'",
-    "validate": "html5validator --root . --show-warnings"
+    "dev": "npx serve . -p 3000",
+    "preview": "npx serve . -p 3000"
   },
   "keywords": [
     "ai",
@@ -21,17 +21,12 @@
   ],
   "author": "DataVault AI",
   "license": "MIT",
-  "devDependencies": {
-    "live-server": "^1.2.2",
-    "html5validator": "^0.4.2"
-  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/datavault-ai/website.git"
+    "url": "https://github.com/joshnel2/aidatacuration.git"
   },
-  "homepage": "https://datavault-ai.com",
   "engines": {
-    "node": ">=14.0.0"
+    "node": "18.x"
   },
   "browserslist": [
     "> 1%",
