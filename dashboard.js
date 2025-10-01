@@ -142,179 +142,390 @@ function setupQuickActions() {
     
     actionButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const action = this.textContent.trim();
-            handleQuickAction(action);
+            const actionId = this.id;
+            handleQuickAction(actionId);
         });
     });
 }
 
-function handleQuickAction(action) {
-    // Handle quick action clicks
-    switch(action) {
-        case 'Upload Documents':
-            showModal('Upload Documents', createUploadDocumentsContent());
+function handleQuickAction(actionId) {
+    // Handle quick action clicks with actual functionality
+    switch(actionId) {
+        case 'uploadDocuments':
+            showModal('Upload Business Documents', createFileUploadContent());
             break;
-        case 'Add Employees':
-            showModal('Add Employees', createAddEmployeesContent());
+        case 'addNaturalLanguage':
+            showModal('Add Business Insights', createNaturalLanguageContent());
             break;
-        case 'Train Neural Net':
-            showModal('Train Neural Network', createTrainNeuralNetContent());
+        case 'sendSurveys':
+            showModal('Send Employee Surveys', createEmployeeSurveyContent());
             break;
-        case 'Chat with AI':
-            showModal('AI Assistant', createAIChatContent());
+        case 'scheduleConsultation':
+            showModal('Schedule Expert Consultation', createConsultationContent());
             break;
         default:
             showNotification('Feature coming soon!', 'info');
     }
 }
 
-function createUploadDocumentsContent() {
+function createFileUploadContent() {
     return `
         <div class="modal-content">
-            <div class="upload-area">
+            <div class="upload-description">
+                <h3>📊 Upload Your Business Documents</h3>
+                <p>Upload financial statements, inventory reports, and operational documents. Our AI will extract key data and integrate it into your business neural network.</p>
+            </div>
+            
+            <div class="upload-area" id="uploadArea">
                 <i class="fas fa-cloud-upload-alt"></i>
-                <h3>Upload Business Documents</h3>
-                <p>Drag and drop files here or click to browse</p>
-                <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.txt">
-                <div class="supported-formats">
-                    <small>Supported formats: PDF, Word, Excel, Text files</small>
+                <h4>Drag and drop files here or click to browse</h4>
+                <p>Supported: PDF, Excel, CSV, Word documents</p>
+                <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="display: none;">
+                <button class="btn btn-outline" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-folder-open"></i>
+                    Browse Files
+                </button>
+            </div>
+            
+            <div class="file-categories">
+                <h4>What types of documents should you upload?</h4>
+                <div class="category-grid">
+                    <div class="category-item">
+                        <i class="fas fa-chart-line"></i>
+                        <strong>Financial Data</strong>
+                        <span>P&L statements, balance sheets, cash flow reports</span>
+                    </div>
+                    <div class="category-item">
+                        <i class="fas fa-boxes"></i>
+                        <strong>Inventory Reports</strong>
+                        <span>Stock levels, supplier data, product catalogs</span>
+                    </div>
+                    <div class="category-item">
+                        <i class="fas fa-cogs"></i>
+                        <strong>Operational Data</strong>
+                        <span>Process documents, workflow charts, procedures</span>
+                    </div>
                 </div>
             </div>
-            <div class="upload-options">
+            
+            <div class="processing-options">
                 <label class="checkbox-label">
-                    <input type="checkbox" checked>
+                    <input type="checkbox" checked id="extractFinancial">
                     <span class="checkmark"></span>
-                    Automatically extract financial data
+                    Extract and categorize financial data automatically
                 </label>
                 <label class="checkbox-label">
-                    <input type="checkbox" checked>
+                    <input type="checkbox" checked id="processInventory">
                     <span class="checkmark"></span>
-                    Process for neural network training
+                    Analyze inventory patterns and supplier relationships
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" checked id="generatePrompts">
+                    <span class="checkmark"></span>
+                    Generate AI prompts using Grok API
                 </label>
             </div>
+            
+            <div class="selected-files" id="selectedFiles" style="display: none;">
+                <h4>Selected Files:</h4>
+                <div class="file-list" id="fileList"></div>
+            </div>
+            
             <div class="modal-actions">
-                <button class="btn btn-primary">Start Upload</button>
+                <button class="btn btn-primary" id="processFiles" disabled>
+                    <i class="fas fa-brain"></i>
+                    Process with AI
+                </button>
                 <button class="btn btn-outline modal-close">Cancel</button>
             </div>
         </div>
     `;
 }
 
-function createAddEmployeesContent() {
+function createNaturalLanguageContent() {
     return `
         <div class="modal-content">
-            <div class="employee-form">
-                <h3>Add Employee for AI Outreach</h3>
+            <div class="nl-description">
+                <h3>🗣️ Share Your Business Insights</h3>
+                <p>Tell us about your business in your own words. Our AI will process your insights and integrate them into your business neural network.</p>
+            </div>
+            
+            <div class="insight-prompts">
+                <h4>What would you like to share?</h4>
+                <div class="prompt-buttons">
+                    <button class="prompt-btn" data-prompt="business-overview">
+                        <i class="fas fa-building"></i>
+                        Business Overview
+                    </button>
+                    <button class="prompt-btn" data-prompt="challenges">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Current Challenges
+                    </button>
+                    <button class="prompt-btn" data-prompt="goals">
+                        <i class="fas fa-target"></i>
+                        Goals & Objectives
+                    </button>
+                    <button class="prompt-btn" data-prompt="processes">
+                        <i class="fas fa-cogs"></i>
+                        Key Processes
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Share your business insights:</label>
+                <textarea id="businessInsights" placeholder="Describe your business operations, challenges, goals, team structure, or any other insights you'd like the AI to understand about your company..." rows="8"></textarea>
+                <small>The more detail you provide, the better our AI can understand and support your business.</small>
+            </div>
+            
+            <div class="context-options">
+                <h4>Context (Optional)</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Focus Area</label>
+                        <select id="focusArea">
+                            <option value="">Select focus area</option>
+                            <option value="operations">Operations & Processes</option>
+                            <option value="financial">Financial Management</option>
+                            <option value="team">Team & HR</option>
+                            <option value="customer">Customer Relations</option>
+                            <option value="growth">Growth & Strategy</option>
+                            <option value="technology">Technology & Systems</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority Level</label>
+                        <select id="priorityLevel">
+                            <option value="medium">Medium Priority</option>
+                            <option value="high">High Priority</option>
+                            <option value="low">Low Priority</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="processInsights">
+                    <i class="fas fa-brain"></i>
+                    Process with Grok AI
+                </button>
+                <button class="btn btn-outline modal-close">Cancel</button>
+            </div>
+        </div>
+    `;
+}
+
+function createEmployeeSurveyContent() {
+    return `
+        <div class="modal-content">
+            <div class="survey-description">
+                <h3>📧 Send Employee Surveys</h3>
+                <p>Automatically send personalized surveys to your employees to gather insights about their roles, processes, and ideas for improvement.</p>
+            </div>
+            
+            <div class="survey-features">
+                <div class="feature-highlight">
+                    <i class="fas fa-robot"></i>
+                    <strong>AI-Generated Questions</strong>
+                    <span>Personalized questions based on each employee's role and department</span>
+                </div>
+                <div class="feature-highlight">
+                    <i class="fas fa-envelope"></i>
+                    <strong>Automated Emails</strong>
+                    <span>Professional survey invitations sent automatically</span>
+                </div>
+                <div class="feature-highlight">
+                    <i class="fas fa-brain"></i>
+                    <strong>Grok AI Processing</strong>
+                    <span>Responses processed into actionable business insights</span>
+                </div>
+            </div>
+            
+            <div class="employee-input">
+                <h4>Add Employees for Survey</h4>
+                <div class="employee-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Employee Name</label>
+                            <input type="text" id="employeeName" placeholder="Full name">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="employeeEmail" placeholder="employee@company.com">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Department</label>
+                            <select id="employeeDepartment">
+                                <option value="">Select department</option>
+                                <option value="Finance">Finance</option>
+                                <option value="HR">Human Resources</option>
+                                <option value="Operations">Operations</option>
+                                <option value="Sales">Sales</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="IT">Information Technology</option>
+                                <option value="Customer Service">Customer Service</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Role/Position</label>
+                            <input type="text" id="employeeRole" placeholder="e.g., Manager, Analyst, Director">
+                        </div>
+                    </div>
+                    <button class="btn btn-outline" id="addEmployee">
+                        <i class="fas fa-plus"></i>
+                        Add Employee
+                    </button>
+                </div>
+            </div>
+            
+            <div class="employee-list" id="employeeList" style="display: none;">
+                <h4>Employees to Survey:</h4>
+                <div class="employee-items" id="employeeItems"></div>
+            </div>
+            
+            <div class="survey-options">
+                <h4>Survey Configuration</h4>
+                <label class="checkbox-label">
+                    <input type="checkbox" checked id="personalizeQuestions">
+                    <span class="checkmark"></span>
+                    Generate personalized questions for each role
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" checked id="followUpReminders">
+                    <span class="checkmark"></span>
+                    Send follow-up reminders after 3 days
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" checked id="anonymousResponses">
+                    <span class="checkmark"></span>
+                    Keep individual responses confidential
+                </label>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="sendSurveys" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                    Send Surveys
+                </button>
+                <button class="btn btn-outline modal-close">Cancel</button>
+            </div>
+        </div>
+    `;
+}
+
+function createConsultationContent() {
+    return `
+        <div class="modal-content">
+            <div class="consultation-description">
+                <h3>🎥 Schedule Expert Consultation</h3>
+                <p>Book a comprehensive 90-minute Zoom consultation with our expert team. We'll conduct deep interviews to understand your business and create the most accurate AI partner possible.</p>
+            </div>
+            
+            <div class="consultation-features">
+                <div class="feature-highlight">
+                    <i class="fas fa-users"></i>
+                    <strong>Expert Team Interview</strong>
+                    <span>Human specialists conduct detailed business analysis</span>
+                </div>
+                <div class="feature-highlight">
+                    <i class="fas fa-video"></i>
+                    <strong>90-Minute Deep Dive</strong>
+                    <span>Comprehensive Zoom session covering all business aspects</span>
+                </div>
+                <div class="feature-highlight">
+                    <i class="fas fa-file-alt"></i>
+                    <strong>Detailed Report</strong>
+                    <span>Professional analysis and AI integration roadmap</span>
+                </div>
+            </div>
+            
+            <div class="consultation-form">
+                <h4>Consultation Details</h4>
                 <div class="form-group">
-                    <label>Employee Name</label>
-                    <input type="text" placeholder="Enter full name">
+                    <label>Primary Contact Name</label>
+                    <input type="text" id="contactName" placeholder="Your full name">
                 </div>
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" placeholder="employee@company.com">
+                    <input type="email" id="contactEmail" placeholder="your.email@company.com">
                 </div>
                 <div class="form-group">
-                    <label>Department</label>
-                    <select>
-                        <option>Select department</option>
-                        <option>Finance</option>
-                        <option>HR</option>
-                        <option>Operations</option>
-                        <option>Sales</option>
-                        <option>Marketing</option>
-                        <option>IT</option>
+                    <label>Phone Number</label>
+                    <input type="tel" id="contactPhone" placeholder="+1 (555) 123-4567">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Preferred Date</label>
+                        <input type="date" id="preferredDate" min="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div class="form-group">
+                        <label>Preferred Time</label>
+                        <select id="preferredTime">
+                            <option value="">Select time</option>
+                            <option value="09:00">9:00 AM</option>
+                            <option value="10:00">10:00 AM</option>
+                            <option value="11:00">11:00 AM</option>
+                            <option value="13:00">1:00 PM</option>
+                            <option value="14:00">2:00 PM</option>
+                            <option value="15:00">3:00 PM</option>
+                            <option value="16:00">4:00 PM</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Timezone</label>
+                    <select id="timezone">
+                        <option value="America/New_York">Eastern Time (ET)</option>
+                        <option value="America/Chicago">Central Time (CT)</option>
+                        <option value="America/Denver">Mountain Time (MT)</option>
+                        <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                        <option value="UTC">UTC</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Role/Position</label>
-                    <input type="text" placeholder="e.g., Manager, Director, Analyst">
-                </div>
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" checked>
-                        <span class="checkmark"></span>
-                        Enable automatic AI interview scheduling
-                    </label>
+                    <label>Key Areas to Focus On</label>
+                    <textarea id="focusAreas" placeholder="What specific aspects of your business would you like our experts to focus on during the consultation?" rows="4"></textarea>
                 </div>
             </div>
-            <div class="modal-actions">
-                <button class="btn btn-primary">Add Employee</button>
-                <button class="btn btn-outline modal-close">Cancel</button>
-            </div>
-        </div>
-    `;
-}
-
-function createTrainNeuralNetContent() {
-    return `
-        <div class="modal-content">
-            <div class="training-options">
-                <h3>Neural Network Training Options</h3>
-                <div class="training-card">
-                    <h4>Quick Training</h4>
-                    <p>Train on recently uploaded documents and new employee data</p>
-                    <button class="btn btn-primary">Start Quick Training</button>
-                </div>
-                <div class="training-card">
-                    <h4>Deep Training</h4>
-                    <p>Comprehensive training on all available data with advanced analysis</p>
-                    <button class="btn btn-primary">Start Deep Training</button>
-                </div>
-                <div class="training-card">
-                    <h4>Custom Training</h4>
-                    <p>Select specific data sources and configure training parameters</p>
-                    <button class="btn btn-outline">Configure Custom Training</button>
-                </div>
-            </div>
-            <div class="training-status">
-                <h4>Current Training Status</h4>
-                <div class="status-item">
-                    <span>Last Training:</span>
-                    <span>2 hours ago</span>
-                </div>
-                <div class="status-item">
-                    <span>Network Accuracy:</span>
-                    <span>87.3%</span>
-                </div>
-                <div class="status-item">
-                    <span>Data Points:</span>
-                    <span>1,247</span>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function createAIChatContent() {
-    return `
-        <div class="modal-content">
-            <div class="ai-chat-container">
-                <div class="chat-header">
-                    <h3>AI Business Assistant</h3>
-                    <span class="chat-status">Online</span>
-                </div>
-                <div class="chat-messages">
-                    <div class="message ai-message">
-                        <div class="message-avatar">
-                            <i class="fas fa-brain"></i>
-                        </div>
-                        <div class="message-content">
-                            <p>Hello! I'm your AI business assistant. I've analyzed your company data and I'm ready to help you with insights, recommendations, and answering questions about your business operations.</p>
-                        </div>
+            
+            <div class="consultation-agenda">
+                <h4>What We'll Cover</h4>
+                <div class="agenda-items">
+                    <div class="agenda-item">
+                        <i class="fas fa-building"></i>
+                        <span>Business model and value proposition analysis</span>
+                    </div>
+                    <div class="agenda-item">
+                        <i class="fas fa-cogs"></i>
+                        <span>Operational workflows and process mapping</span>
+                    </div>
+                    <div class="agenda-item">
+                        <i class="fas fa-users"></i>
+                        <span>Team structure and organizational dynamics</span>
+                    </div>
+                    <div class="agenda-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Financial landscape and growth strategies</span>
+                    </div>
+                    <div class="agenda-item">
+                        <i class="fas fa-laptop"></i>
+                        <span>Technology infrastructure assessment</span>
+                    </div>
+                    <div class="agenda-item">
+                        <i class="fas fa-target"></i>
+                        <span>AI integration opportunities and roadmap</span>
                     </div>
                 </div>
-                <div class="chat-input">
-                    <input type="text" placeholder="Ask me anything about your business...">
-                    <button class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-                <div class="quick-questions">
-                    <h4>Quick Questions:</h4>
-                    <button class="question-btn">What are my top business risks?</button>
-                    <button class="question-btn">Show me financial insights</button>
-                    <button class="question-btn">How can I improve efficiency?</button>
-                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="scheduleConsultation">
+                    <i class="fas fa-calendar-plus"></i>
+                    Schedule Consultation
+                </button>
+                <button class="btn btn-outline modal-close">Cancel</button>
             </div>
         </div>
     `;
@@ -651,3 +862,125 @@ dashboardStyles.textContent = `
 `;
 
 document.head.appendChild(dashboardStyles);
+
+// Add additional modal styles
+const additionalStyles = document.createElement('style');
+additionalStyles.textContent = `
+    .upload-description, .nl-description, .survey-description, .consultation-description {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border-radius: 12px;
+    }
+
+    .file-categories, .insight-prompts, .survey-features, .consultation-features {
+        margin: 2rem 0;
+    }
+
+    .category-grid, .prompt-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .category-item, .feature-highlight {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 1.5rem;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        gap: 0.5rem;
+    }
+
+    .category-item i, .feature-highlight i {
+        font-size: 2rem;
+        color: #627eea;
+        margin-bottom: 0.5rem;
+    }
+
+    .prompt-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .prompt-btn:hover {
+        border-color: #627eea;
+        background: #f8fafc;
+    }
+
+    .prompt-btn i {
+        font-size: 1.5rem;
+        color: #627eea;
+    }
+
+    .processing-options, .context-options, .survey-options {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .employee-form {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .agenda-items {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .agenda-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+    }
+
+    .agenda-item i {
+        color: #627eea;
+        font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .category-grid, .prompt-buttons {
+            grid-template-columns: 1fr;
+        }
+        
+        .agenda-items {
+            grid-template-columns: 1fr;
+        }
+    }
+`;
+
+document.head.appendChild(additionalStyles);
