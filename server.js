@@ -7,10 +7,18 @@ const path = require('path');
 const fs = require('fs').promises;
 require('dotenv').config();
 
+// Import database connection
+const { db, testConnection, initializeDatabase, closeConnection } = require('./database/connection');
+
 // Import API modules
 const { router: dataProcessorRouter } = require('./api/data-processor');
 const { router: employeeSurveyRouter } = require('./api/employee-surveys');
 const { router: zoomIntegrationRouter } = require('./api/zoom-integration');
+const { router: authRouter, authenticateToken, requireSubscription } = require('./api/auth');
+
+// Import models
+const User = require('./models/User');
+const Subscription = require('./models/Subscription');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,21 +51,22 @@ async function ensureDirectories() {
 }
 
 // API Routes
-app.use('/api/data', dataProcessorRouter);
-app.use('/api/surveys', employeeSurveyRouter);
-app.use('/api/zoom', zoomIntegrationRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/data', authenticateToken, requireSubscription(), dataProcessorRouter);
+app.use('/api/surveys', authenticateToken, requireSubscription('advanced-neural'), employeeSurveyRouter);
+app.use('/api/zoom', authenticateToken, requireSubscription('enterprise-neural'), zoomIntegrationRouter);
 
 // Main dashboard API endpoints
-app.get('/api/dashboard/:userId', async (req, res) => {
+app.get('/api/dashboard', authenticateToken, async (req, res) => {
     try {
-        const { userId } = req.params;
-        
         // Get user's processed data summary
-        const dashboardData = await getDashboardData(userId);
+        const dashboardData = await getDashboardData(req.user.id);
         
         res.json({
             success: true,
-            data: dashboardData
+            data: dashboardData,
+            user: req.user.toJSON(),
+            subscription: req.subscription?.toJSON() || null
         });
     } catch (error) {
         console.error('Dashboard data error:', error);
@@ -363,20 +372,57 @@ app.use((error, req, res, next) => {
 // Start server
 async function startServer() {
     try {
+        console.log('🔄 Initializing AI Data Curation Platform...');
+        
+        // Test database connection
+        const dbConnected = await testConnection();
+        if (!dbConnected) {
+            throw new Error('Database connection failed');
+        }
+        
+        // Initialize database (run migrations and seeds)
+        const dbInitialized = await initializeDatabase();
+        if (!dbInitialized) {
+            throw new Error('Database initialization failed');
+        }
+        
+        // Ensure required directories exist
         await ensureDirectories();
         
         app.listen(PORT, () => {
-            console.log(`🚀 AI Data Curation Platform running on port ${PORT}`);
+            console.log('\n🎉 AI Data Curation Platform Started Successfully!');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log(`🚀 Server running on: http://localhost:${PORT}`);
             console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
-            console.log(`🔧 API endpoints available at /api/*`);
+            console.log(`🔐 Authentication: /api/auth/*`);
+            console.log(`💾 Data processing: /api/data/*`);
             console.log(`📧 Employee surveys: /api/surveys/*`);
             console.log(`🎥 Zoom integration: /api/zoom/*`);
-            console.log(`💾 Data processing: /api/data/*`);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('\n📝 Demo Accounts Available:');
+            console.log('   Username: demo     | Password: demo123     | Plan: Advanced Neural');
+            console.log('   Username: admin    | Password: admin123    | Plan: Enterprise Neural');
+            console.log('   Username: enterprise_user | Password: enterprise123 | Plan: Enterprise Neural');
+            console.log('   Username: startup_founder | Password: startup123    | Plan: Basic Neural (Trial)');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         });
     } catch (error) {
-        console.error('Failed to start server:', error);
+        console.error('❌ Failed to start server:', error);
         process.exit(1);
     }
 }
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+    console.log('\n🔄 Shutting down gracefully...');
+    await closeConnection();
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    console.log('\n🔄 Shutting down gracefully...');
+    await closeConnection();
+    process.exit(0);
+});
 
 startServer();

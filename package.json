@@ -7,7 +7,11 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "build": "echo 'Backend platform ready for deployment'",
-    "preview": "npx serve . -p 3000"
+    "preview": "npx serve . -p 3000",
+    "db:migrate": "knex migrate:latest",
+    "db:seed": "knex seed:run",
+    "db:reset": "knex migrate:rollback --all && knex migrate:latest && knex seed:run",
+    "db:setup": "knex migrate:latest && knex seed:run"
   },
   "keywords": [
     "ai",
@@ -44,7 +48,15 @@
     "pdf-parse": "^1.1.1",
     "xlsx": "^0.18.5",
     "csv-parser": "^3.0.0",
-    "mammoth": "^1.6.0"
+    "mammoth": "^1.6.0",
+    "knex": "^3.0.1",
+    "sqlite3": "^5.1.6",
+    "pg": "^8.11.3",
+    "mysql2": "^3.6.5",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "crypto": "^1.0.1",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

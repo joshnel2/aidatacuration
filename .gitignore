@@ -40,4 +40,18 @@ logs
 
 # Temporary files
 .tmp/
-temp/core
+temp/
+
+# Database files
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+
+# Upload directories
+uploads/
+data/
+
+# Generated files
+*.pdf
+*.xlsx
+*.csvcore

@@ -2016,6 +2016,19 @@ body {
     font-weight: 600;
 }
 
+.subscription-card .status-icon {
+    background: var(--gradient-accent);
+}
+
+.subscription-actions {
+    margin-top: var(--spacing-sm);
+}
+
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+}
+
 .dashboard-widgets {
     display: grid;
     grid-template-columns: 1fr 1fr;

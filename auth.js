@@ -2,38 +2,14 @@
 
 // Storage keys
 const STORAGE_KEYS = {
+    ACCESS_TOKEN: 'ai_data_curation_access_token',
+    REFRESH_TOKEN: 'ai_data_curation_refresh_token',
     USER: 'ai_data_curation_user',
-    AUTH_TOKEN: 'ai_data_curation_token',
-    REMEMBER_ME: 'ai_data_curation_remember'
+    SUBSCRIPTION: 'ai_data_curation_subscription'
 };
 
-// Demo users for testing
-const DEMO_USERS = [
-    {
-        id: 1,
-        username: 'demo',
-        email: 'demo@aidatacuration.com',
-        password: 'demo123',
-        firstName: 'Demo',
-        lastName: 'User',
-        company: 'AI Data Curation Inc',
-        companySize: '11-50',
-        plan: 'advanced-neural',
-        joinDate: '2024-01-15'
-    },
-    {
-        id: 2,
-        username: 'admin',
-        email: 'admin@aidatacuration.com',
-        password: 'admin123',
-        firstName: 'Admin',
-        lastName: 'User',
-        company: 'AI Data Curation Inc',
-        companySize: '201-1000',
-        plan: 'enterprise-neural',
-        joinDate: '2024-01-01'
-    }
-];
+// API Base URL
+const API_BASE_URL = window.location.origin + '/api';
 
 // Utility functions
 function generateAuthToken() {
@@ -106,21 +82,18 @@ function setLoading(button, isLoading) {
 }
 
 // Authentication functions
-function saveUser(user, rememberMe = false) {
-    const token = generateAuthToken();
-    const userData = { ...user, token };
-    delete userData.password; // Don't store password
-
-    if (rememberMe) {
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
-        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-        localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true');
-    } else {
-        sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
-        sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+function saveAuthData(authData, rememberMe = false) {
+    const storage = rememberMe ? localStorage : sessionStorage;
+    
+    storage.setItem(STORAGE_KEYS.ACCESS_TOKEN, authData.accessToken);
+    storage.setItem(STORAGE_KEYS.REFRESH_TOKEN, authData.refreshToken);
+    storage.setItem(STORAGE_KEYS.USER, JSON.stringify(authData.user));
+    
+    if (authData.subscription) {
+        storage.setItem(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(authData.subscription));
     }
-
-    return userData;
+    
+    return authData;
 }
 
 function getCurrentUser() {
@@ -136,13 +109,55 @@ function getCurrentUser() {
     return null;
 }
 
-function signOut() {
+function getCurrentSubscription() {
+    const sessionSub = sessionStorage.getItem(STORAGE_KEYS.SUBSCRIPTION);
+    const localSub = localStorage.getItem(STORAGE_KEYS.SUBSCRIPTION);
+    
+    if (sessionSub) {
+        return JSON.parse(sessionSub);
+    } else if (localSub) {
+        return JSON.parse(localSub);
+    }
+    
+    return null;
+}
+
+function getAccessToken() {
+    return sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || 
+           localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+}
+
+function getRefreshToken() {
+    return sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || 
+           localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+}
+
+async function signOut() {
+    try {
+        // Call API to sign out
+        const token = getAccessToken();
+        if (token) {
+            await fetch(`${API_BASE_URL}/auth/signout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Sign out API error:', error);
+    }
+    
     // Clear all stored data
+    sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     sessionStorage.removeItem(STORAGE_KEYS.USER);
-    sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    sessionStorage.removeItem(STORAGE_KEYS.SUBSCRIPTION);
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
-    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME);
+    localStorage.removeItem(STORAGE_KEYS.SUBSCRIPTION);
     
     // Redirect to sign in
     window.location.href = 'signin.html';
@@ -163,92 +178,69 @@ function checkAuth() {
 }
 
 // Sign up functionality
-function handleSignUp(formData) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            // Validate required fields
-            const requiredFields = ['firstName', 'lastName', 'email', 'company', 'companySize', 'plan', 'username', 'password'];
-            for (const field of requiredFields) {
-                if (!formData.get(field)) {
-                    reject(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`);
-                    return;
-                }
-            }
+async function handleSignUp(formData) {
+    try {
+        const signupData = {
+            username: formData.get('username'),
+            email: formData.get('email'),
+            password: formData.get('password'),
+            confirmPassword: formData.get('confirmPassword'),
+            firstName: formData.get('firstName'),
+            lastName: formData.get('lastName'),
+            companyName: formData.get('company'),
+            companySize: formData.get('companySize'),
+            plan: formData.get('plan'),
+            industry: formData.get('industry') || '',
+            companyDescription: formData.get('companyDescription') || ''
+        };
 
-            // Validate email
-            if (!validateEmail(formData.get('email'))) {
-                reject('Please enter a valid email address');
-                return;
-            }
+        const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(signupData)
+        });
 
-            // Validate password
-            if (!validatePassword(formData.get('password'))) {
-                reject('Password must be at least 8 characters long');
-                return;
-            }
+        const data = await response.json();
 
-            // Check password confirmation
-            if (formData.get('password') !== formData.get('confirmPassword')) {
-                reject('Passwords do not match');
-                return;
-            }
+        if (!response.ok) {
+            throw new Error(data.error || 'Sign up failed');
+        }
 
-            // Check if terms are accepted
-            if (!formData.get('terms')) {
-                reject('You must accept the Terms of Service and Privacy Policy');
-                return;
-            }
-
-            // Check if username already exists (check against demo users)
-            const username = formData.get('username');
-            const email = formData.get('email');
-            const existingUser = DEMO_USERS.find(u => u.username === username || u.email === email);
-            if (existingUser) {
-                reject('Username or email already exists');
-                return;
-            }
-
-            // Create new user
-            const newUser = {
-                id: Date.now(),
-                username: formData.get('username'),
-                email: formData.get('email'),
-                password: hashPassword(formData.get('password')),
-                firstName: formData.get('firstName'),
-                lastName: formData.get('lastName'),
-                company: formData.get('company'),
-                companySize: formData.get('companySize'),
-                plan: formData.get('plan'),
-                newsletter: !!formData.get('newsletter'),
-                joinDate: new Date().toISOString().split('T')[0]
-            };
-
-            // Add to demo users (in real app, this would be an API call)
-            DEMO_USERS.push(newUser);
-
-            resolve(newUser);
-        }, 1500); // Simulate API delay
-    });
+        return data;
+    } catch (error) {
+        throw new Error(error.message || 'Sign up failed');
+    }
 }
 
 // Sign in functionality
-function handleSignIn(username, password, rememberMe = false) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            // Find user
-            const user = DEMO_USERS.find(u => 
-                (u.username === username || u.email === username) && 
-                u.password === hashPassword(password)
-            );
+async function handleSignIn(username, password, rememberMe = false) {
+    try {
+        const signinData = {
+            username: username,
+            password: password,
+            rememberMe: rememberMe
+        };
 
-            if (!user) {
-                reject('Invalid username/email or password');
-                return;
-            }
+        const response = await fetch(`${API_BASE_URL}/auth/signin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(signinData)
+        });
 
-            resolve(user);
-        }, 1000); // Simulate API delay
-    });
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Sign in failed');
+        }
+
+        return data;
+    } catch (error) {
+        throw new Error(error.message || 'Sign in failed');
+    }
 }
 
 // Initialize authentication on page load
@@ -272,10 +264,10 @@ document.addEventListener('DOMContentLoaded', function() {
             setLoading(submitBtn, true);
             
             try {
-                const newUser = await handleSignUp(formData);
+                const authData = await handleSignUp(formData);
                 
-                // Save user and redirect to dashboard
-                saveUser(newUser, false);
+                // Save authentication data and redirect to dashboard
+                saveAuthData(authData, false);
                 showMessage('Account created successfully! Redirecting to dashboard...', 'success');
                 
                 setTimeout(() => {
@@ -283,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 2000);
                 
             } catch (error) {
-                showMessage(error, 'error');
+                showMessage(error.message, 'error');
                 setLoading(submitBtn, false);
             }
         });
@@ -303,10 +295,10 @@ document.addEventListener('DOMContentLoaded', function() {
             setLoading(submitBtn, true);
             
             try {
-                const user = await handleSignIn(username, password, rememberMe);
+                const authData = await handleSignIn(username, password, rememberMe);
                 
-                // Save user and redirect to dashboard
-                saveUser(user, rememberMe);
+                // Save authentication data and redirect to dashboard
+                saveAuthData(authData, rememberMe);
                 showMessage('Sign in successful! Redirecting to dashboard...', 'success');
                 
                 setTimeout(() => {
@@ -314,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 1500);
                 
             } catch (error) {
-                showMessage(error, 'error');
+                showMessage(error.message, 'error');
                 setLoading(submitBtn, false);
             }
         });
@@ -324,12 +316,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const demoBtn = document.querySelector('.demo-btn');
     if (demoBtn) {
         demoBtn.addEventListener('click', async function() {
-            const submitBtn = document.querySelector('#signinForm button[type="submit"]');
             setLoading(this, true);
             
             try {
-                const demoUser = DEMO_USERS[0]; // Use first demo user
-                saveUser(demoUser, false);
+                const authData = await handleSignIn('demo', 'demo123', false);
+                
+                // Save authentication data and redirect to dashboard
+                saveAuthData(authData, false);
                 showMessage('Demo account loaded! Redirecting to dashboard...', 'success');
                 
                 setTimeout(() => {
@@ -355,22 +348,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load user data on dashboard
     if (window.location.pathname.includes('dashboard.html')) {
         const user = getCurrentUser();
+        const subscription = getCurrentSubscription();
+        
         if (user) {
             // Update user info in navigation
             const userName = document.getElementById('userName');
             const userPlan = document.getElementById('userPlan');
             
             if (userName) {
-                userName.textContent = `${user.firstName} ${user.lastName}`;
+                userName.textContent = `${user.first_name} ${user.last_name}`;
             }
             
-            if (userPlan) {
+            if (userPlan && subscription) {
                 const planNames = {
                     'basic-neural': 'Basic Neural',
                     'advanced-neural': 'Advanced Neural',
                     'enterprise-neural': 'Enterprise Neural'
                 };
-                userPlan.textContent = planNames[user.plan] || user.plan;
+                
+                let planText = planNames[subscription.plan_type] || subscription.plan_type;
+                if (subscription.is_in_trial) {
+                    planText += ' (Trial)';
+                }
+                
+                userPlan.textContent = planText;
             }
         }
     }
