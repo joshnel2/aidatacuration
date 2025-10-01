@@ -264,8 +264,11 @@ class User {
     // Get user with subscription
     async getWithSubscription() {
         try {
-            const Subscription = require('./Subscription');
-            const subscription = await Subscription.findActiveByUserId(this.id);
+            const subscription = await db('subscriptions')
+                .where({ user_id: this.id, status: 'active' })
+                .where('current_period_end', '>', db.fn.now())
+                .orderBy('created_at', 'desc')
+                .first();
             
             return {
                 user: this,
@@ -299,8 +302,10 @@ class User {
     // Check if user has active subscription
     async hasActiveSubscription() {
         try {
-            const Subscription = require('./Subscription');
-            const subscription = await Subscription.findActiveByUserId(this.id);
+            const subscription = await db('subscriptions')
+                .where({ user_id: this.id, status: 'active' })
+                .where('current_period_end', '>', db.fn.now())
+                .first();
             return !!subscription;
         } catch (error) {
             return false;
@@ -310,8 +315,10 @@ class User {
     // Get user's current plan
     async getCurrentPlan() {
         try {
-            const Subscription = require('./Subscription');
-            const subscription = await Subscription.findActiveByUserId(this.id);
+            const subscription = await db('subscriptions')
+                .where({ user_id: this.id, status: 'active' })
+                .where('current_period_end', '>', db.fn.now())
+                .first();
             return subscription ? subscription.plan_type : null;
         } catch (error) {
             return null;

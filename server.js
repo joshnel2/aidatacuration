@@ -11,10 +11,10 @@ require('dotenv').config();
 const { db, testConnection, initializeDatabase, closeConnection } = require('./database/connection');
 
 // Import API modules
-const { router: dataProcessorRouter } = require('./api/data-processor');
-const { router: employeeSurveyRouter } = require('./api/employee-surveys');
-const { router: zoomIntegrationRouter } = require('./api/zoom-integration');
 const { router: authRouter, authenticateToken, requireSubscription } = require('./api/auth');
+
+// Import other APIs only when needed to avoid startup issues
+let dataProcessorRouter, employeeSurveyRouter, zoomIntegrationRouter;
 
 // Import models
 const User = require('./models/User');
@@ -52,9 +52,28 @@ async function ensureDirectories() {
 
 // API Routes
 app.use('/api/auth', authRouter);
-app.use('/api/data', authenticateToken, requireSubscription(), dataProcessorRouter);
-app.use('/api/surveys', authenticateToken, requireSubscription('advanced-neural'), employeeSurveyRouter);
-app.use('/api/zoom', authenticateToken, requireSubscription('enterprise-neural'), zoomIntegrationRouter);
+
+// Lazy load other API modules to avoid startup issues
+app.use('/api/data', authenticateToken, requireSubscription(), (req, res, next) => {
+    if (!dataProcessorRouter) {
+        dataProcessorRouter = require('./api/data-processor').router;
+    }
+    dataProcessorRouter(req, res, next);
+});
+
+app.use('/api/surveys', authenticateToken, requireSubscription('advanced-neural'), (req, res, next) => {
+    if (!employeeSurveyRouter) {
+        employeeSurveyRouter = require('./api/employee-surveys').router;
+    }
+    employeeSurveyRouter(req, res, next);
+});
+
+app.use('/api/zoom', authenticateToken, requireSubscription('enterprise-neural'), (req, res, next) => {
+    if (!zoomIntegrationRouter) {
+        zoomIntegrationRouter = require('./api/zoom-integration').router;
+    }
+    zoomIntegrationRouter(req, res, next);
+});
 
 // Main dashboard API endpoints
 app.get('/api/dashboard', authenticateToken, async (req, res) => {

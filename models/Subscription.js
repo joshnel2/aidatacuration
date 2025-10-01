@@ -173,7 +173,7 @@ class Subscription {
         try {
             const subscriptionData = await db('subscriptions')
                 .where({ user_id: userId, status: 'active' })
-                .where('current_period_end', '>', db.fn.now())
+                .where('current_period_end', '>', Date.now())
                 .orderBy('created_at', 'desc')
                 .first();
                 
