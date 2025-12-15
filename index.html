@@ -1,501 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Data Curation - Enterprise Data Intelligence Platform</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attorney Commission Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <i class="fas fa-cube"></i>
-                <span>AI Data Curation</span>
-            </div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="#home" class="nav-link">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a href="#process" class="nav-link">Our Process</a>
-                </li>
-                <li class="nav-item">
-                    <a href="#plans" class="nav-link">Plans</a>
-                </li>
-                <li class="nav-item">
-                    <a href="#contact" class="nav-link">Contact</a>
-                </li>
-                <li class="nav-item">
-                    <a href="signin.html" class="nav-link">Sign In</a>
-                </li>
-                <li class="nav-item">
-                    <a href="signup.html" class="nav-link cta-button">Get Started</a>
-                </li>
-            </ul>
-            <div class="hamburger">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </div>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <div class="brand">
+        <div class="brand__mark">AC</div>
+        <div class="brand__text">
+          <div class="brand__title">Attorney Commission Calculator</div>
+          <div class="brand__subtitle">Azure AI-powered rule selection + math</div>
         </div>
-    </nav>
+      </div>
+      <button id="resetBtn" class="btn btn--ghost" type="button">Reset</button>
+    </div>
+  </header>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="hero-container">
-            <div class="hero-content">
-                <h1 class="hero-title">
-                    Build Your Business <span class="gradient-text">Neural Network</span> 
-                    With Automated AI Data Collection
-                </h1>
-                <p class="hero-subtitle">
-                    Our AI automatically gathers, analyzes, and structures your business data into a living neural network. 
-                    From automated employee outreach to financial analysis - we create your complete business AI profile, 
-                    then help you deploy it as your custom AI assistant.
-                </p>
-                <div class="hero-buttons">
-                    <a href="#consultation" class="btn btn-primary">
-                        <i class="fas fa-calendar-alt"></i>
-                        Book Free Consultation
-                    </a>
-                    <a href="#process" class="btn btn-secondary">
-                        <i class="fas fa-play"></i>
-                        Learn How It Works
-                    </a>
-                </div>
-                <div class="hero-stats">
-                    <div class="stat">
-                        <div class="stat-number">24/7</div>
-                        <div class="stat-label">Automated Data Collection</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-number">100%</div>
-                        <div class="stat-label">Custom AI Deployment</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-number">48hr</div>
-                        <div class="stat-label">Neural Network Setup</div>
-                    </div>
-                </div>
-            </div>
-            <div class="hero-visual">
-                <div class="data-visualization">
-                    <div class="data-node node-1">
-                        <i class="fas fa-robot"></i>
-                        <span>AI Outreach</span>
-                    </div>
-                    <div class="data-node node-2">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Auto Financial Scan</span>
-                    </div>
-                    <div class="data-node node-3">
-                        <i class="fas fa-network-wired"></i>
-                        <span>Neural Mapping</span>
-                    </div>
-                    <div class="data-node node-4">
-                        <i class="fas fa-users-cog"></i>
-                        <span>Employee Interviews</span>
-                    </div>
-                    <div class="data-node node-5">
-                        <i class="fas fa-brain"></i>
-                        <span>Learning Engine</span>
-                    </div>
-                    <div class="central-node">
-                        <i class="fas fa-microchip"></i>
-                        <span>Business Neural Net</span>
-                    </div>
-                </div>
-            </div>
+  <main class="container main">
+    <section class="card">
+      <div class="card__header">
+        <h2>Step 1 — Calculate User Payment</h2>
+        <p>Paste your rules sheet, enter the amount, and we’ll select the matching rule and calculate the user commission.</p>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label for="amount">Amount (USD)</label>
+          <input id="amount" name="amount" inputmode="decimal" placeholder="200000" />
+          <div class="hint">Tip: you can type <code>200000</code> or <code>$200,000</code>.</div>
         </div>
-        <div class="hero-background">
-            <div class="gradient-orb orb-1"></div>
-            <div class="gradient-orb orb-2"></div>
-            <div class="gradient-orb orb-3"></div>
+
+        <div class="field">
+          <label for="userName">User</label>
+          <input id="userName" name="userName" placeholder="John Doe" />
         </div>
+
+        <div class="field">
+          <label for="originatorName">Originator</label>
+          <input id="originatorName" name="originatorName" placeholder="Jane Smith" />
+          <div class="hint">If originator is the same person as user, originator payment will be $0.</div>
+        </div>
+
+        <div class="field field--full">
+          <label for="rulesText">Rules Sheet (paste text)</label>
+          <textarea id="rulesText" name="rulesText" rows="10" placeholder="Paste your commission rules here..."></textarea>
+        </div>
+
+        <div class="field field--full">
+          <label for="context">Optional Context</label>
+          <textarea id="context" name="context" rows="3" placeholder="Optional: case type, team, exceptions, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="calcUserBtn" class="btn btn--primary" type="button">Calculate User Payment</button>
+        <div id="userStatus" class="status" aria-live="polite"></div>
+      </div>
+
+      <div id="userResult" class="result" hidden>
+        <div class="result__grid">
+          <div class="result__item">
+            <div class="result__label">Rule applied</div>
+            <div id="ruleApplied" class="result__value result__value--mono"></div>
+          </div>
+          <div class="result__item">
+            <div class="result__label">Percentage</div>
+            <div id="percentage" class="result__value"></div>
+          </div>
+          <div class="result__item">
+            <div class="result__label">User payment</div>
+            <div id="userPayment" class="result__value result__value--strong"></div>
+          </div>
+          <div class="result__item">
+            <div class="result__label">Calculation</div>
+            <div id="userCalc" class="result__value result__value--mono"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features">
-        <div class="container">
-            <h2 class="section-title">Automated Business Neural Network</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <h3>AI Employee Outreach</h3>
-                    <p>Our AI automatically contacts your employees via email/SMS, conducts structured interviews, and gathers real-time sentiment data.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                    </div>
-                    <h3>Automated Financial Analysis</h3>
-                    <p>Upload your documents and our AI extracts, analyzes, and structures all financial data into your business neural network.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-network-wired"></i>
-                    </div>
-                    <h3>Neural Network Mapping</h3>
-                    <p>We create a living map of your business relationships, processes, and data flows that continuously learns and adapts.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-microchip"></i>
-                    </div>
-                    <h3>Custom AI Deployment</h3>
-                    <p>Deploy your business neural network as a custom AI assistant - either with your own models or hosted through our platform.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-users-cog"></i>
-                    </div>
-                    <h3>Human-AI Collaboration</h3>
-                    <p>Our expert team conducts Zoom interviews with key personnel for deep data extraction and validation in enterprise plans.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-infinity"></i>
-                    </div>
-                    <h3>Continuous Learning</h3>
-                    <p>Your business neural network evolves continuously, learning from new data and improving its understanding of your operations.</p>
-                </div>
-            </div>
+    <section class="card">
+      <div class="card__header">
+        <h2>Step 2 — Calculate Originator Payment</h2>
+        <p>This uses the already-calculated <strong>user payment</strong>. It only applies when the originator is <strong>not</strong> the user.</p>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label for="ownOriginationPercent">Own origination other work %</label>
+          <input id="ownOriginationPercent" name="ownOriginationPercent" inputmode="decimal" placeholder="20" />
+          <div class="hint">Example: 20 means 20% of the user payment.</div>
         </div>
+
+        <div class="field">
+          <label>Originator eligibility</label>
+          <div id="eligibility" class="pill pill--neutral">Waiting for Step 1</div>
+          <div id="eligibilityNote" class="hint"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="calcOriginatorBtn" class="btn btn--primary" type="button" disabled>Calculate Originator Payment</button>
+        <div id="originatorStatus" class="status" aria-live="polite"></div>
+      </div>
+
+      <div id="originatorResult" class="result" hidden>
+        <div class="result__grid">
+          <div class="result__item">
+            <div class="result__label">Originator payment</div>
+            <div id="originatorPayment" class="result__value result__value--strong"></div>
+          </div>
+          <div class="result__item">
+            <div class="result__label">Calculation</div>
+            <div id="originatorCalc" class="result__value result__value--mono"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- Process Section -->
-    <section id="process" class="process">
-        <div class="container">
-            <div class="process-header">
-                <h2 class="section-title">How We Build Your Business Neural Network</h2>
-                <p class="section-subtitle">
-                    Our automated AI system creates a living digital twin of your business by intelligently gathering, 
-                    analyzing, and connecting all your data into a neural network that thinks like your company.
-                </p>
-            </div>
-            
-            <div class="process-timeline">
-                <div class="timeline-item">
-                    <div class="timeline-number">01</div>
-                    <div class="timeline-content">
-                        <h3>Automated Data Collection Setup</h3>
-                        <p>You provide employee contacts and upload your business documents. Our AI immediately begins automated outreach and analysis.</p>
-                        <ul>
-                            <li>AI-powered employee interview scheduling</li>
-                            <li>Automated financial document processing</li>
-                            <li>Inventory and operational data extraction</li>
-                            <li>Smart contact management and follow-ups</li>
-                            <li>Real-time progress tracking dashboard</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="timeline-item">
-                    <div class="timeline-number">02</div>
-                    <div class="timeline-content">
-                        <h3>AI Employee Outreach & Interviews</h3>
-                        <p>Our AI conducts personalized interviews with your team, gathering insights about processes, relationships, and operational knowledge that creates your business neural map.</p>
-                        <ul>
-                            <li>Automated email/SMS interview invitations</li>
-                            <li>Intelligent conversation flows adapted per role</li>
-                            <li>Sentiment analysis and relationship mapping</li>
-                            <li>Process workflow documentation</li>
-                            <li>Cultural and operational insight extraction</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="timeline-item">
-                    <div class="timeline-number">03</div>
-                    <div class="timeline-content">
-                        <h3>Neural Network Construction</h3>
-                        <p>All collected data is processed into a unified business neural network that understands your company's structure, relationships, and operational patterns.</p>
-                        <ul>
-                            <li>Multi-dimensional business relationship mapping</li>
-                            <li>Process flow neural pathway creation</li>
-                            <li>Predictive model training on your specific data</li>
-                            <li>Knowledge graph construction and validation</li>
-                            <li>Custom business logic integration</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="timeline-item">
-                    <div class="timeline-number">04</div>
-                    <div class="timeline-content">
-                        <h3>AI Deployment & Continuous Learning</h3>
-                        <p>Deploy your business neural network as a custom AI assistant that knows your company inside and out, with continuous learning and updates.</p>
-                        <ul>
-                            <li>Custom AI model deployment (your infrastructure or ours)</li>
-                            <li>Prompt engineering and fine-tuning</li>
-                            <li>Real-time business intelligence dashboard</li>
-                            <li>Continuous data collection and network updates</li>
-                            <li>24/7 AI assistant available for your team</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="future-vision">
-                <h3>The Future is Neural Network Businesses</h3>
-                <div class="vision-content">
-                    <div class="vision-text">
-                        <p>
-                            Every successful business will soon operate as a neural network - a living, learning system that 
-                            understands every relationship, process, and pattern within the organization. Companies that build 
-                            their neural networks first will have an insurmountable competitive advantage.
-                        </p>
-                        <p>
-                            Your business neural network becomes the foundation for AI-driven decision making, automated operations, 
-                            predictive insights, and intelligent customer interactions. It's not just data collection - it's creating 
-                            a digital consciousness of your business that can think, learn, and evolve.
-                        </p>
-                    </div>
-                    <div class="vision-stats">
-                        <div class="vision-stat">
-                            <span class="stat-large">90%</span>
-                            <span class="stat-small">of businesses will be neural by 2028</span>
-                        </div>
-                        <div class="vision-stat">
-                            <span class="stat-large">50x</span>
-                            <span class="stat-small">faster decision making with neural networks</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Plans Section -->
-    <section id="plans" class="plans">
-        <div class="container">
-            <div class="plans-header">
-                <h2 class="section-title">Neural Network Service Plans</h2>
-                <p class="section-subtitle">
-                    Choose your level of automation - from self-service document analysis to full enterprise neural network construction with human expertise.
-                </p>
-            </div>
-            
-            <div class="plans-grid">
-                <div class="plan-card">
-                    <div class="plan-header">
-                        <h3 class="plan-name">Basic Neural</h3>
-                        <p class="plan-description">Self-service document analysis and basic business AI profile</p>
-                    </div>
-                    <div class="plan-features">
-                        <h4>Perfect for small businesses:</h4>
-                        <ul>
-                            <li><i class="fas fa-check"></i> Upload financial documents & business data</li>
-                            <li><i class="fas fa-check"></i> AI extracts and structures all information</li>
-                            <li><i class="fas fa-check"></i> Tell our AI about your business processes</li>
-                            <li><i class="fas fa-check"></i> Basic business neural network creation</li>
-                            <li><i class="fas fa-check"></i> Simple AI assistant deployment</li>
-                            <li><i class="fas fa-check"></i> Monthly network updates</li>
-                            <li><i class="fas fa-check"></i> Self-hosted or our hosting options</li>
-                        </ul>
-                        <div class="plan-type">
-                            <strong>Subscription Model</strong> - Monthly/Annual billing
-                        </div>
-                    </div>
-                    <div class="plan-cta">
-                        <a href="signup.html" class="btn btn-outline">Start Free Trial</a>
-                    </div>
-                </div>
-                
-                <div class="plan-card featured">
-                    <div class="plan-badge">Most Popular</div>
-                    <div class="plan-header">
-                        <h3 class="plan-name">Advanced Neural</h3>
-                        <p class="plan-description">Full automation with AI employee outreach and complex data integration</p>
-                    </div>
-                    <div class="plan-features">
-                        <h4>Everything in Basic, plus:</h4>
-                        <ul>
-                            <li><i class="fas fa-check"></i> AI automatically contacts your employees</li>
-                            <li><i class="fas fa-check"></i> Structured employee interviews & sentiment analysis</li>
-                            <li><i class="fas fa-check"></i> Advanced relationship and process mapping</li>
-                            <li><i class="fas fa-check"></i> Complex operational data integration</li>
-                            <li><i class="fas fa-check"></i> Predictive business intelligence dashboard</li>
-                            <li><i class="fas fa-check"></i> Continuous learning and network evolution</li>
-                            <li><i class="fas fa-check"></i> Custom AI model fine-tuning</li>
-                            <li><i class="fas fa-check"></i> Priority support and monthly strategy calls</li>
-                        </ul>
-                        <div class="plan-type">
-                            <strong>Subscription Model</strong> - Monthly/Annual billing
-                        </div>
-                    </div>
-                    <div class="plan-cta">
-                        <a href="signup.html" class="btn btn-primary">Get Started</a>
-                    </div>
-                </div>
-                
-                <div class="plan-card">
-                    <div class="plan-header">
-                        <h3 class="plan-name">Enterprise Neural</h3>
-                        <p class="plan-description">White-glove service with human experts and ongoing project management</p>
-                    </div>
-                    <div class="plan-features">
-                        <h4>Everything in Advanced, plus:</h4>
-                        <ul>
-                            <li><i class="fas fa-check"></i> Our team conducts Zoom interviews with key personnel</li>
-                            <li><i class="fas fa-check"></i> Handpicked data extraction and validation</li>
-                            <li><i class="fas fa-check"></i> Dedicated project manager and AI specialists</li>
-                            <li><i class="fas fa-check"></i> Continuous project with ongoing optimizations</li>
-                            <li><i class="fas fa-check"></i> Custom neural network architecture design</li>
-                            <li><i class="fas fa-check"></i> Enterprise-grade security and compliance</li>
-                            <li><i class="fas fa-check"></i> 24/7 premium support and maintenance</li>
-                            <li><i class="fas fa-check"></i> Quarterly business intelligence reviews</li>
-                        </ul>
-                        <div class="plan-type">
-                            <strong>Continuous Project</strong> - Ongoing partnership
-                        </div>
-                    </div>
-                    <div class="plan-cta">
-                        <a href="signup.html" class="btn btn-outline">Contact Sales</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="plans-note">
-                <p>All plans include AI hosting options, custom model deployment assistance, and prompt engineering support. Enterprise includes dedicated human expertise and ongoing optimization.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Consultation Section -->
-    <section id="consultation" class="consultation">
-        <div class="container">
-            <div class="consultation-content">
-                <div class="consultation-text">
-                    <h2>Ready to Build Your Business Neural Network?</h2>
-                    <p>
-                        Book a free consultation with our neural network specialists. We'll assess your business structure 
-                        and design a custom AI automation strategy that transforms your company into a learning, intelligent system.
-                    </p>
-                    <div class="consultation-benefits">
-                        <div class="benefit">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Free business neural network assessment</span>
-                        </div>
-                        <div class="benefit">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Custom automation roadmap</span>
-                        </div>
-                        <div class="benefit">
-                            <i class="fas fa-check-circle"></i>
-                            <span>AI deployment strategy and timeline</span>
-                        </div>
-                        <div class="benefit">
-                            <i class="fas fa-check-circle"></i>
-                            <span>No obligation - see your business as AI would</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="consultation-form">
-                    <form class="contact-form">
-                        <h3>Book Your Free Consultation</h3>
-                        <div class="form-group">
-                            <input type="text" placeholder="Full Name" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="email" placeholder="Business Email" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" placeholder="Company Name" required>
-                        </div>
-                        <div class="form-group">
-                            <select required>
-                                <option value="">Company Size</option>
-                                <option value="1-10">1-10 employees</option>
-                                <option value="11-50">11-50 employees</option>
-                                <option value="51-200">51-200 employees</option>
-                                <option value="201-1000">201-1000 employees</option>
-                                <option value="1000+">1000+ employees</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <select required>
-                                <option value="">Service Interest</option>
-                                <option value="basic-neural">Basic Neural - Document Analysis</option>
-                                <option value="advanced-neural">Advanced Neural - AI Employee Outreach</option>
-                                <option value="enterprise-neural">Enterprise Neural - Human Expert Team</option>
-                                <option value="custom-solution">Custom Neural Network Solution</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <textarea placeholder="Describe your business and what you'd like your AI to understand about your company..." rows="4"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary full-width">
-                            <i class="fas fa-calendar-alt"></i>
-                            Schedule Free Consultation
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
     <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                <div class="footer-logo">
-                    <i class="fas fa-cube"></i>
-                    <span>AI Data Curation</span>
-                </div>
-                    <p>Building business neural networks that learn, adapt, and evolve with your company through automated AI data collection and intelligent automation.</p>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-linkedin"></i></a>
-                        <a href="#"><i class="fab fa-github"></i></a>
-                    </div>
-                </div>
-                <div class="footer-section">
-                    <h4>Neural Services</h4>
-                    <ul>
-                        <li><a href="#">Basic Neural Network</a></li>
-                        <li><a href="#">Advanced AI Outreach</a></li>
-                        <li><a href="#">Enterprise Neural Design</a></li>
-                        <li><a href="#">Custom AI Deployment</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="#">About Us</a></li>
-                        <li><a href="#">Our Process</a></li>
-                        <li><a href="#">Case Studies</a></li>
-                        <li><a href="#">Careers</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="#">Documentation</a></li>
-                        <li><a href="#">Blog</a></li>
-                        <li><a href="#">Support</a></li>
-                        <li><a href="#">Contact</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 AI Data Curation. All rights reserved.</p>
-                <div class="footer-links">
-                    <a href="#">Privacy Policy</a>
-                    <a href="#">Terms of Service</a>
-                    <a href="#">Security</a>
-                </div>
-            </div>
-        </div>
+      <div class="footer__note">
+        The model is instructed to return JSON-only and to treat your pasted rules sheet as authoritative.
+      </div>
     </footer>
+  </main>
 
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

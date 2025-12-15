@@ -1,366 +1,282 @@
-// Mobile Navigation Toggle
-const hamburger = document.querySelector('.hamburger');
-const navMenu = document.querySelector('.nav-menu');
+function $(id) {
+  return document.getElementById(id);
+}
 
-hamburger.addEventListener('click', () => {
-    hamburger.classList.toggle('active');
-    navMenu.classList.toggle('active');
-});
+const els = {
+  amount: $('amount'),
+  userName: $('userName'),
+  originatorName: $('originatorName'),
+  rulesText: $('rulesText'),
+  context: $('context'),
 
-// Close mobile menu when clicking on nav links
-document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
-    hamburger.classList.remove('active');
-    navMenu.classList.remove('active');
-}));
+  calcUserBtn: $('calcUserBtn'),
+  userStatus: $('userStatus'),
+  userResult: $('userResult'),
+  ruleApplied: $('ruleApplied'),
+  percentage: $('percentage'),
+  userPayment: $('userPayment'),
+  userCalc: $('userCalc'),
 
-// Smooth scrolling for navigation links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
+  ownOriginationPercent: $('ownOriginationPercent'),
+  eligibility: $('eligibility'),
+  eligibilityNote: $('eligibilityNote'),
+  calcOriginatorBtn: $('calcOriginatorBtn'),
+  originatorStatus: $('originatorStatus'),
+  originatorResult: $('originatorResult'),
+  originatorPayment: $('originatorPayment'),
+  originatorCalc: $('originatorCalc'),
 
-// Navbar background on scroll
-window.addEventListener('scroll', () => {
-    const navbar = document.querySelector('.navbar');
-    if (window.scrollY > 50) {
-        navbar.style.background = 'rgba(255, 255, 255, 0.98)';
-        navbar.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
-    } else {
-        navbar.style.background = 'rgba(255, 255, 255, 0.95)';
-        navbar.style.boxShadow = 'none';
-    }
-});
-
-// Enhanced Intersection Observer for animations
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
+  resetBtn: $('resetBtn'),
 };
 
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('animate-in');
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
-        }
-    });
-}, observerOptions);
+let state = {
+  userPayment: null,
+  userCalc: null,
+  ruleApplied: null,
+  percentage: null,
+};
 
-// Observe elements for animations
-document.addEventListener('DOMContentLoaded', () => {
-    const animateElements = document.querySelectorAll('.timeline-item');
-    
-    animateElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(30px)';
-        el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-        observer.observe(el);
+function normalizeName(name) {
+  return String(name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function parseMoney(input) {
+  const raw = String(input || '').trim();
+  if (!raw) return NaN;
+  // Keep digits, dot, minus
+  const cleaned = raw.replace(/[^0-9.\-]/g, '');
+  return Number(cleaned);
+}
+
+function formatUsd(n) {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return '';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+  }).format(n);
+}
+
+function formatPercent(p) {
+  if (typeof p !== 'number' || !Number.isFinite(p)) return '';
+  return `${(p * 100).toFixed(2)}%`;
+}
+
+function setStatus(el, msg, kind = 'neutral') {
+  el.textContent = msg;
+  el.classList.remove('status--neutral', 'status--error', 'status--success');
+  el.classList.add(`status--${kind}`);
+}
+
+function setPill(text, kind = 'neutral') {
+  els.eligibility.textContent = text;
+  els.eligibility.classList.remove('pill--neutral', 'pill--good', 'pill--bad');
+  els.eligibility.classList.add(`pill--${kind}`);
+}
+
+function clearResults() {
+  state = { userPayment: null, userCalc: null, ruleApplied: null, percentage: null };
+
+  els.userResult.hidden = true;
+  els.originatorResult.hidden = true;
+
+  els.ruleApplied.textContent = '';
+  els.percentage.textContent = '';
+  els.userPayment.textContent = '';
+  els.userCalc.textContent = '';
+
+  els.originatorPayment.textContent = '';
+  els.originatorCalc.textContent = '';
+
+  setStatus(els.userStatus, '', 'neutral');
+  setStatus(els.originatorStatus, '', 'neutral');
+
+  setPill('Waiting for Step 1', 'neutral');
+  els.eligibilityNote.textContent = '';
+  els.calcOriginatorBtn.disabled = true;
+}
+
+function updateEligibility() {
+  const userName = els.userName.value;
+  const originatorName = els.originatorName.value;
+
+  if (state.userPayment == null) {
+    setPill('Waiting for Step 1', 'neutral');
+    els.eligibilityNote.textContent = 'Calculate user payment first.';
+    els.calcOriginatorBtn.disabled = true;
+    return;
+  }
+
+  if (!String(originatorName || '').trim()) {
+    setPill('Originator missing', 'bad');
+    els.eligibilityNote.textContent = 'Enter an originator name (or set it equal to the user).';
+    els.calcOriginatorBtn.disabled = true;
+    return;
+  }
+
+  const same = normalizeName(userName) === normalizeName(originatorName);
+  if (same) {
+    setPill('Same person', 'bad');
+    els.eligibilityNote.textContent = 'Originator equals user, so originator payment is $0.';
+    els.calcOriginatorBtn.disabled = true;
+    els.originatorResult.hidden = false;
+    els.originatorPayment.textContent = formatUsd(0);
+    els.originatorCalc.textContent = 'same person => 0';
+    return;
+  }
+
+  setPill('Eligible', 'good');
+  els.eligibilityNote.textContent = 'Originator is different from user; you can compute originator payment.';
+  els.calcOriginatorBtn.disabled = false;
+}
+
+async function postJson(url, body) {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const text = await r.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = { error: true, message: text };
+  }
+
+  if (!r.ok) {
+    const msg = data?.message || `Request failed (${r.status})`;
+    const err = new Error(msg);
+    err.status = r.status;
+    err.data = data;
+    throw err;
+  }
+
+  return data;
+}
+
+async function onCalculateUser() {
+  clearResults();
+
+  const amount = parseMoney(els.amount.value);
+  const userName = els.userName.value.trim();
+  const originatorName = els.originatorName.value.trim();
+  const rulesText = els.rulesText.value.trim();
+  const context = els.context.value.trim();
+
+  if (!Number.isFinite(amount) || amount < 0) {
+    setStatus(els.userStatus, 'Enter a valid amount (>= 0).', 'error');
+    return;
+  }
+  if (!userName) {
+    setStatus(els.userStatus, 'Enter a user name.', 'error');
+    return;
+  }
+  if (!rulesText) {
+    setStatus(els.userStatus, 'Paste the rules sheet text.', 'error');
+    return;
+  }
+
+  els.calcUserBtn.disabled = true;
+  setStatus(els.userStatus, 'Calculating user payment…', 'neutral');
+
+  try {
+    const data = await postJson('/api/commission/user', {
+      amount,
+      userName,
+      originatorName,
+      rulesText,
+      context,
     });
+
+    state.userPayment = data.user_payment;
+    state.userCalc = data.calculation;
+    state.ruleApplied = data.rule_applied;
+    state.percentage = data.percentage;
+
+    els.ruleApplied.textContent = data.rule_applied || '(rule not returned)';
+    els.percentage.textContent = formatPercent(data.percentage);
+    els.userPayment.textContent = formatUsd(data.user_payment);
+    els.userCalc.textContent = data.calculation || '';
+
+    els.userResult.hidden = false;
+    setStatus(els.userStatus, 'User payment calculated.', 'success');
+
+    updateEligibility();
+  } catch (e) {
+    setStatus(els.userStatus, e.message || 'Failed to calculate user payment.', 'error');
+  } finally {
+    els.calcUserBtn.disabled = false;
+  }
+}
+
+async function onCalculateOriginator() {
+  els.originatorResult.hidden = true;
+
+  const userName = els.userName.value.trim();
+  const originatorName = els.originatorName.value.trim();
+  const ownOriginationPercent = Number(String(els.ownOriginationPercent.value || '').trim().replace(/[^0-9.\-]/g, ''));
+
+  if (state.userPayment == null) {
+    setStatus(els.originatorStatus, 'Calculate user payment first.', 'error');
+    return;
+  }
+
+  if (!Number.isFinite(ownOriginationPercent) || ownOriginationPercent < 0 || ownOriginationPercent > 100) {
+    setStatus(els.originatorStatus, 'Enter a valid % between 0 and 100.', 'error');
+    return;
+  }
+
+  const same = normalizeName(userName) === normalizeName(originatorName);
+  if (same) {
+    // Guard; should already be disabled.
+    els.originatorResult.hidden = false;
+    els.originatorPayment.textContent = formatUsd(0);
+    els.originatorCalc.textContent = 'same person => 0';
+    setStatus(els.originatorStatus, 'Originator equals user, so originator payment is $0.', 'success');
+    return;
+  }
+
+  els.calcOriginatorBtn.disabled = true;
+  setStatus(els.originatorStatus, 'Calculating originator payment…', 'neutral');
+
+  try {
+    const data = await postJson('/api/commission/originator', {
+      userPayment: state.userPayment,
+      ownOriginationPercent,
+      userName,
+      originatorName,
+    });
+
+    els.originatorPayment.textContent = formatUsd(data.originator_payment);
+    els.originatorCalc.textContent = data.calculation || '';
+    els.originatorResult.hidden = false;
+    setStatus(els.originatorStatus, 'Originator payment calculated.', 'success');
+  } catch (e) {
+    setStatus(els.originatorStatus, e.message || 'Failed to calculate originator payment.', 'error');
+  } finally {
+    els.calcOriginatorBtn.disabled = false;
+  }
+}
+
+els.calcUserBtn.addEventListener('click', onCalculateUser);
+els.calcOriginatorBtn.addEventListener('click', onCalculateOriginator);
+
+els.userName.addEventListener('input', updateEligibility);
+els.originatorName.addEventListener('input', updateEligibility);
+els.ownOriginationPercent.addEventListener('input', () => {
+  if (els.originatorStatus.textContent) setStatus(els.originatorStatus, '', 'neutral');
 });
 
-// Form handling
-const contactForm = document.querySelector('.contact-form');
-if (contactForm) {
-    contactForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Get form data
-        const formData = new FormData(this);
-        const formObject = {};
-        formData.forEach((value, key) => {
-            formObject[key] = value;
-        });
-        
-        // Show loading state
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-        submitBtn.disabled = true;
-        
-        // Simulate form submission (replace with actual API call)
-        setTimeout(() => {
-            // Show success message
-            showNotification('Thank you! We\'ll be in touch within 24 hours to schedule your consultation.', 'success');
-            
-            // Reset form
-            this.reset();
-            
-            // Reset button
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }, 2000);
-    });
-}
-
-// Notification system
-function showNotification(message, type = 'info') {
-    // Remove existing notifications
-    const existingNotification = document.querySelector('.notification');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-    
-    // Create notification
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
-            <span>${message}</span>
-            <button class="notification-close">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
-    
-    // Add styles
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 10000;
-        max-width: 400px;
-        padding: 16px 20px;
-        background: ${type === 'success' ? '#10b981' : '#3b82f6'};
-        color: white;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        transform: translateX(100%);
-        transition: transform 0.3s ease-out;
-    `;
-    
-    const content = notification.querySelector('.notification-content');
-    content.style.cssText = `
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    `;
-    
-    const closeBtn = notification.querySelector('.notification-close');
-    closeBtn.style.cssText = `
-        background: none;
-        border: none;
-        color: white;
-        cursor: pointer;
-        padding: 4px;
-        margin-left: auto;
-    `;
-    
-    // Add to page
-    document.body.appendChild(notification);
-    
-    // Animate in
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 100);
-    
-    // Auto remove
-    const autoRemove = setTimeout(() => {
-        removeNotification(notification);
-    }, 5000);
-    
-    // Manual remove
-    closeBtn.addEventListener('click', () => {
-        clearTimeout(autoRemove);
-        removeNotification(notification);
-    });
-}
-
-function removeNotification(notification) {
-    notification.style.transform = 'translateX(100%)';
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    }, 300);
-}
-
-// Enhanced data nodes animation with connections
-function animateDataNodes() {
-    const nodes = document.querySelectorAll('.data-node');
-    const centralNode = document.querySelector('.central-node');
-    
-    nodes.forEach((node, index) => {
-        const delay = index * 1000;
-        const duration = 6000 + (index * 500);
-        
-        node.style.animationDelay = `${delay}ms`;
-        node.style.animationDuration = `${duration}ms`;
-        
-        // Add hover effect with connection line simulation
-        node.addEventListener('mouseenter', () => {
-            node.style.boxShadow = '0 0 30px rgba(98, 126, 234, 0.5)';
-            if (centralNode) {
-                centralNode.style.boxShadow = '0 0 40px rgba(6, 255, 165, 0.6)';
-            }
-        });
-        
-        node.addEventListener('mouseleave', () => {
-            node.style.boxShadow = '';
-            if (centralNode) {
-                centralNode.style.boxShadow = '';
-            }
-        });
-    });
-}
-
-// Add dynamic particle background
-function createParticles() {
-    const hero = document.querySelector('.hero-background');
-    if (!hero) return;
-    
-    for (let i = 0; i < 20; i++) {
-        const particle = document.createElement('div');
-        particle.style.cssText = `
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: rgba(98, 126, 234, 0.3);
-            border-radius: 50%;
-            pointer-events: none;
-            animation: floatParticle ${15 + Math.random() * 10}s linear infinite;
-            left: ${Math.random() * 100}%;
-            top: ${Math.random() * 100}%;
-            animation-delay: ${Math.random() * 10}s;
-        `;
-        hero.appendChild(particle);
-    }
-}
-
-// Add particle animation keyframe
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes floatParticle {
-        0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-        10% { opacity: 1; }
-        90% { opacity: 1; }
-        100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
-    }
-`;
-document.head.appendChild(style);
-
-// Initialize animations when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    animateDataNodes();
-    createParticles();
-    
-    // Add hover effects to navigation
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px)';
-        });
-        
-        link.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-    
-    // Add interactive effects to feature cards
-    const featureCards = document.querySelectorAll('.feature-card');
-    featureCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            const icon = this.querySelector('.feature-icon');
-            icon.style.transform = 'scale(1.1) rotate(5deg)';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            const icon = this.querySelector('.feature-icon');
-            icon.style.transform = 'scale(1) rotate(0deg)';
-        });
-    });
-    
-    // Add parallax effect to hero background orbs
-    window.addEventListener('scroll', () => {
-        const scrolled = window.pageYOffset;
-        const parallax = scrolled * 0.5;
-        
-        const orbs = document.querySelectorAll('.gradient-orb');
-        orbs.forEach((orb, index) => {
-            const speed = 0.2 + (index * 0.1);
-            orb.style.transform = `translate(0, ${parallax * speed}px)`;
-        });
-    });
+els.resetBtn.addEventListener('click', () => {
+  els.amount.value = '';
+  els.userName.value = '';
+  els.originatorName.value = '';
+  els.rulesText.value = '';
+  els.context.value = '';
+  els.ownOriginationPercent.value = '';
+  clearResults();
 });
 
-// Add typing effect to hero title
-function typeWriter(element, text, speed = 100) {
-    let i = 0;
-    element.innerHTML = '';
-    
-    function type() {
-        if (i < text.length) {
-            element.innerHTML += text.charAt(i);
-            i++;
-            setTimeout(type, speed);
-        }
-    }
-    
-    type();
-}
-
-// Initialize typing effect (optional - can be enabled)
-// document.addEventListener('DOMContentLoaded', () => {
-//     const heroTitle = document.querySelector('.hero-title');
-//     const originalText = heroTitle.textContent;
-//     typeWriter(heroTitle, originalText, 50);
-// });
-
-// Add loading animation for the page
-window.addEventListener('load', () => {
-    document.body.style.opacity = '1';
-    document.body.style.transform = 'translateY(0)';
-});
-
-// Initialize page with loading state
-document.addEventListener('DOMContentLoaded', () => {
-    document.body.style.opacity = '0';
-    document.body.style.transform = 'translateY(20px)';
-    document.body.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-});
-
-// Add interactive stats counter
-function animateValue(element, start, end, duration) {
-    let startTimestamp = null;
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        const current = Math.floor(progress * (end - start) + start);
-        element.textContent = current + (element.dataset.suffix || '');
-        if (progress < 1) {
-            window.requestAnimationFrame(step);
-        }
-    };
-    window.requestAnimationFrame(step);
-}
-
-// Animate stats when they come into view
-const statsObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting && !entry.target.animated) {
-            const statNumbers = entry.target.querySelectorAll('.stat-number');
-            statNumbers.forEach(stat => {
-                const endValue = parseInt(stat.textContent);
-                stat.dataset.suffix = stat.textContent.replace(/[0-9]/g, '');
-                animateValue(stat, 0, endValue, 2000);
-            });
-            entry.target.animated = true;
-        }
-    });
-}, { threshold: 0.5 });
-
-document.addEventListener('DOMContentLoaded', () => {
-    const statsSection = document.querySelector('.hero-stats');
-    if (statsSection) {
-        statsObserver.observe(statsSection);
-    }
-});
+clearResults();

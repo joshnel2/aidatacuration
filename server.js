@@ -1,447 +1,317 @@
-// Main Server for AI Data Curation Platform
-// Integrates all backend services for automated data gathering and AI partner building
+// Attorney Commission Calculator Server (Azure AI Foundry)
+// Serves a single-page UI and exposes two AI-backed calculation endpoints.
 
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs').promises;
 require('dotenv').config();
-
-// Import database connection
-const { db, testConnection, initializeDatabase, closeConnection } = require('./database/connection');
-
-// Import API modules
-const { router: authRouter, authenticateToken, requireSubscription } = require('./api/auth');
-
-// Import other APIs only when needed to avoid startup issues
-let dataProcessorRouter, employeeSurveyRouter, zoomIntegrationRouter;
-
-// Import models
-const User = require('./models/User');
-const Subscription = require('./models/Subscription');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Serve static files
+app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname)));
 
-// Ensure required directories exist
-async function ensureDirectories() {
-    const dirs = [
-        'uploads',
-        'data/processed',
-        'data/natural_language',
-        'data/surveys',
-        'data/survey_responses',
-        'data/aggregated_insights',
-        'data/consultations',
-        'data/consultation_results',
-        'data/consultation_reports'
-    ];
+app.get('/health', (req, res) => {
+  res.json({ ok: true });
+});
 
-    for (const dir of dirs) {
-        await fs.mkdir(dir, { recursive: true });
-    }
+function normalizeName(name) {
+  return String(name || '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-// API Routes
-app.use('/api/auth', authRouter);
-
-// Lazy load other API modules to avoid startup issues
-app.use('/api/data', authenticateToken, requireSubscription(), (req, res, next) => {
-    if (!dataProcessorRouter) {
-        dataProcessorRouter = require('./api/data-processor').router;
-    }
-    dataProcessorRouter(req, res, next);
-});
-
-app.use('/api/surveys', authenticateToken, requireSubscription('advanced-neural'), (req, res, next) => {
-    if (!employeeSurveyRouter) {
-        employeeSurveyRouter = require('./api/employee-surveys').router;
-    }
-    employeeSurveyRouter(req, res, next);
-});
-
-app.use('/api/zoom', authenticateToken, requireSubscription('enterprise-neural'), (req, res, next) => {
-    if (!zoomIntegrationRouter) {
-        zoomIntegrationRouter = require('./api/zoom-integration').router;
-    }
-    zoomIntegrationRouter(req, res, next);
-});
-
-// Main dashboard API endpoints
-app.get('/api/dashboard', authenticateToken, async (req, res) => {
-    try {
-        // Get user's processed data summary
-        const dashboardData = await getDashboardData(req.user.id);
-        
-        res.json({
-            success: true,
-            data: dashboardData,
-            user: req.user.toJSON(),
-            subscription: req.subscription?.toJSON() || null
-        });
-    } catch (error) {
-        console.error('Dashboard data error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// AI Partner status and configuration
-app.get('/api/ai-partner/:userId', async (req, res) => {
-    try {
-        const { userId } = req.params;
-        
-        const aiPartnerData = await getAIPartnerStatus(userId);
-        
-        res.json({
-            success: true,
-            data: aiPartnerData
-        });
-    } catch (error) {
-        console.error('AI Partner data error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Company onboarding workflow
-app.post('/api/onboard-company', async (req, res) => {
-    try {
-        const { userId, companyData, plan } = req.body;
-        
-        const onboardingResult = await initiateCompanyOnboarding(userId, companyData, plan);
-        
-        res.json({
-            success: true,
-            message: 'Company onboarding initiated',
-            data: onboardingResult
-        });
-    } catch (error) {
-        console.error('Onboarding error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Survey page route
-app.get('/survey/:surveyId', (req, res) => {
-    res.sendFile(path.join(__dirname, 'survey.html'));
-});
-
-// Serve main pages
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.get('/signup', (req, res) => {
-    res.sendFile(path.join(__dirname, 'signup.html'));
-});
-
-app.get('/signin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'signin.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dashboard.html'));
-});
-
-// Helper functions
-async function getDashboardData(userId) {
-    try {
-        // Get processed files
-        const processedFiles = await getProcessedFiles(userId);
-        
-        // Get survey responses
-        const surveyData = await getSurveyData(userId);
-        
-        // Get consultation data
-        const consultationData = await getConsultationData(userId);
-        
-        // Get AI partner status
-        const aiPartnerStatus = await getAIPartnerStatus(userId);
-        
-        return {
-            processedFiles: processedFiles.length,
-            surveyResponses: surveyData.completed,
-            consultationsCompleted: consultationData.completed,
-            aiPartnerStatus: aiPartnerStatus.status,
-            dataQuality: calculateDataQuality(processedFiles, surveyData, consultationData),
-            insights: await getLatestInsights(userId),
-            recommendations: await getRecommendations(userId)
-        };
-    } catch (error) {
-        console.error('Error getting dashboard data:', error);
-        return {
-            processedFiles: 0,
-            surveyResponses: 0,
-            consultationsCompleted: 0,
-            aiPartnerStatus: 'not_started',
-            dataQuality: 0,
-            insights: [],
-            recommendations: []
-        };
-    }
+function mustBeFiniteNumber(n, fieldName) {
+  if (typeof n !== 'number' || !Number.isFinite(n)) {
+    const err = new Error(`${fieldName} must be a finite number`);
+    err.statusCode = 400;
+    throw err;
+  }
 }
 
-async function getProcessedFiles(userId) {
-    try {
-        const files = await fs.readdir('data/processed');
-        return files.filter(file => file.includes(`_${userId}_`));
-    } catch (error) {
-        return [];
-    }
+function extractJsonObject(text) {
+  const s = String(text || '');
+  const first = s.indexOf('{');
+  const last = s.lastIndexOf('}');
+  if (first === -1 || last === -1 || last <= first) {
+    const err = new Error('Model response did not contain JSON');
+    err.statusCode = 502;
+    throw err;
+  }
+  const jsonText = s.slice(first, last + 1);
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    const err = new Error('Failed to parse JSON from model response');
+    err.statusCode = 502;
+    throw err;
+  }
 }
 
-async function getSurveyData(userId) {
-    try {
-        const responses = await fs.readdir('data/survey_responses');
-        const userResponses = responses.filter(file => file.includes(`_${userId}_`));
-        
-        return {
-            sent: userResponses.length,
-            completed: userResponses.length, // Simplified
-            pending: 0
-        };
-    } catch (error) {
-        return { sent: 0, completed: 0, pending: 0 };
-    }
-}
+async function callChatModel({ system, user, temperature = 0 }) {
+  const messages = [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ];
 
-async function getConsultationData(userId) {
-    try {
-        const consultations = await fs.readdir('data/consultations');
-        const userConsultations = consultations.filter(file => file.includes(`_${userId}_`));
-        
-        return {
-            scheduled: userConsultations.length,
-            completed: userConsultations.length, // Simplified
-            pending: 0
-        };
-    } catch (error) {
-        return { scheduled: 0, completed: 0, pending: 0 };
-    }
-}
+  // Option A: Full Foundry chat-completions URL provided
+  // Example: AZURE_AI_FOUNDRY_CHAT_COMPLETIONS_URL=https://.../chat/completions
+  if (process.env.AZURE_AI_FOUNDRY_CHAT_COMPLETIONS_URL && process.env.AZURE_AI_FOUNDRY_API_KEY) {
+    const url = process.env.AZURE_AI_FOUNDRY_CHAT_COMPLETIONS_URL;
+    const apiKey = process.env.AZURE_AI_FOUNDRY_API_KEY;
+    const model = process.env.AZURE_AI_FOUNDRY_MODEL;
 
-async function getAIPartnerStatus(userId) {
-    try {
-        // Check if AI partner configuration exists
-        const configFiles = await fs.readdir('data/processed');
-        const hasConfig = configFiles.some(file => 
-            file.includes(`_${userId}_`) && file.includes('ai_partner_config')
-        );
-        
-        if (hasConfig) {
-            return {
-                status: 'active',
-                accuracy: 94.7,
-                dataPoints: 1247,
-                lastTraining: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-                capabilities: [
-                    'Financial Analysis',
-                    'Operational Insights',
-                    'Strategic Planning',
-                    'Risk Assessment'
-                ]
-            };
-        } else {
-            return {
-                status: 'building',
-                progress: 73,
-                nextStep: 'Awaiting employee survey responses',
-                estimatedCompletion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-            };
-        }
-    } catch (error) {
-        return {
-            status: 'not_started',
-            progress: 0,
-            nextStep: 'Upload business documents to begin'
-        };
-    }
-}
-
-function calculateDataQuality(processedFiles, surveyData, consultationData) {
-    let score = 0;
-    
-    // Files contribute 40%
-    if (processedFiles.length > 0) score += 40;
-    
-    // Surveys contribute 35%
-    if (surveyData.completed > 0) score += 35;
-    
-    // Consultations contribute 25%
-    if (consultationData.completed > 0) score += 25;
-    
-    return Math.min(score, 100);
-}
-
-async function getLatestInsights(userId) {
-    // Return sample insights - in production, fetch from processed data
-    return [
-        {
-            type: 'financial',
-            title: 'Revenue Growth Opportunity',
-            description: 'Analysis suggests 23% revenue increase possible through operational efficiency improvements',
-            confidence: 87,
-            priority: 'high'
-        },
-        {
-            type: 'operational',
-            title: 'Process Bottleneck Identified',
-            description: 'Employee surveys reveal approval workflow causing 2-day delays',
-            confidence: 92,
-            priority: 'medium'
-        }
-    ];
-}
-
-async function getRecommendations(userId) {
-    // Return sample recommendations - in production, generate from AI analysis
-    return [
-        {
-            title: 'Implement Automated Approval System',
-            impact: 'High',
-            effort: 'Medium',
-            timeline: '2-3 weeks',
-            description: 'Reduce approval delays by 80% through workflow automation'
-        },
-        {
-            title: 'Optimize Inventory Management',
-            impact: 'Medium',
-            effort: 'Low',
-            timeline: '1 week',
-            description: 'AI-driven inventory predictions can reduce holding costs by 15%'
-        }
-    ];
-}
-
-async function initiateCompanyOnboarding(userId, companyData, plan) {
-    const onboardingSteps = {
-        'basic-neural': [
-            'document_upload',
-            'natural_language_input',
-            'ai_partner_generation'
-        ],
-        'advanced-neural': [
-            'document_upload',
-            'natural_language_input',
-            'employee_survey_setup',
-            'ai_partner_generation'
-        ],
-        'enterprise-neural': [
-            'document_upload',
-            'natural_language_input',
-            'employee_survey_setup',
-            'consultation_scheduling',
-            'ai_partner_generation'
-        ]
+    const body = {
+      messages,
+      temperature,
+      max_tokens: 700,
+      ...(model ? { model } : {}),
     };
 
-    const steps = onboardingSteps[plan] || onboardingSteps['basic-neural'];
-    
-    // Save onboarding data
-    const onboardingData = {
-        userId,
-        companyData,
-        plan,
-        steps,
-        currentStep: 0,
-        status: 'in_progress',
-        createdAt: new Date().toISOString()
-    };
-
-    await fs.writeFile(
-        path.join('data', 'onboarding', `${userId}_onboarding.json`),
-        JSON.stringify(onboardingData, null, 2)
-    );
-
-    return {
-        onboardingId: userId,
-        steps,
-        currentStep: steps[0],
-        estimatedCompletion: getEstimatedCompletion(plan)
-    };
-}
-
-function getEstimatedCompletion(plan) {
-    const completionTimes = {
-        'basic-neural': 2, // 2 days
-        'advanced-neural': 7, // 1 week
-        'enterprise-neural': 14 // 2 weeks
-    };
-
-    const days = completionTimes[plan] || 2;
-    return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
-}
-
-// Error handling middleware
-app.use((error, req, res, next) => {
-    console.error('Server error:', error);
-    res.status(500).json({ 
-        error: 'Internal server error',
-        message: error.message 
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
     });
-});
 
-// Start server
-async function startServer() {
-    try {
-        console.log('🔄 Initializing AI Data Curation Platform...');
-        
-        // Test database connection
-        const dbConnected = await testConnection();
-        if (!dbConnected) {
-            throw new Error('Database connection failed');
-        }
-        
-        // Initialize database (run migrations and seeds)
-        const dbInitialized = await initializeDatabase();
-        if (!dbInitialized) {
-            throw new Error('Database initialization failed');
-        }
-        
-        // Ensure required directories exist
-        await ensureDirectories();
-        
-        app.listen(PORT, () => {
-            console.log('\n🎉 AI Data Curation Platform Started Successfully!');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log(`🚀 Server running on: http://localhost:${PORT}`);
-            console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
-            console.log(`🔐 Authentication: /api/auth/*`);
-            console.log(`💾 Data processing: /api/data/*`);
-            console.log(`📧 Employee surveys: /api/surveys/*`);
-            console.log(`🎥 Zoom integration: /api/zoom/*`);
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('\n📝 Demo Accounts Available:');
-            console.log('   Username: demo     | Password: demo123     | Plan: Advanced Neural');
-            console.log('   Username: admin    | Password: admin123    | Plan: Enterprise Neural');
-            console.log('   Username: enterprise_user | Password: enterprise123 | Plan: Enterprise Neural');
-            console.log('   Username: startup_founder | Password: startup123    | Plan: Basic Neural (Trial)');
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-        });
-    } catch (error) {
-        console.error('❌ Failed to start server:', error);
-        process.exit(1);
+    const text = await r.text();
+    if (!r.ok) {
+      const err = new Error(`Azure AI Foundry request failed (${r.status}): ${text.slice(0, 800)}`);
+      err.statusCode = 502;
+      throw err;
     }
+
+    // OpenAI-compatible responses typically look like: { choices: [ { message: { content } } ] }
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // In case provider returned non-JSON
+      return text;
+    }
+
+    return data?.choices?.[0]?.message?.content ?? text;
+  }
+
+  // Option B: Azure OpenAI-style endpoint+deployment
+  // AZURE_OPENAI_ENDPOINT=https://{resource}.openai.azure.com
+  // AZURE_OPENAI_API_KEY=...
+  // AZURE_OPENAI_DEPLOYMENT=...
+  if (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_API_KEY && process.env.AZURE_OPENAI_DEPLOYMENT) {
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT.replace(/\/$/, '');
+    const apiKey = process.env.AZURE_OPENAI_API_KEY;
+    const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
+    const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-10-21';
+
+    const url = `${endpoint}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
+
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+      },
+      body: JSON.stringify({ messages, temperature, max_tokens: 700 }),
+    });
+
+    const text = await r.text();
+    if (!r.ok) {
+      const err = new Error(`Azure OpenAI request failed (${r.status}): ${text.slice(0, 800)}`);
+      err.statusCode = 502;
+      throw err;
+    }
+
+    const data = JSON.parse(text);
+    return data?.choices?.[0]?.message?.content ?? '';
+  }
+
+  const err = new Error(
+    'Azure model credentials not configured. Set AZURE_AI_FOUNDRY_CHAT_COMPLETIONS_URL + AZURE_AI_FOUNDRY_API_KEY (recommended), or AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY + AZURE_OPENAI_DEPLOYMENT.'
+  );
+  err.statusCode = 500;
+  throw err;
 }
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-    console.log('\n🔄 Shutting down gracefully...');
-    await closeConnection();
-    process.exit(0);
+app.post('/api/commission/user', async (req, res, next) => {
+  try {
+    const amount = Number(req.body.amount);
+    const userName = String(req.body.userName || '').trim();
+    const originatorName = String(req.body.originatorName || '').trim();
+    const rulesText = String(req.body.rulesText || '').trim();
+    const context = String(req.body.context || '').trim();
+
+    if (!userName) {
+      const err = new Error('User name is required');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (!rulesText) {
+      const err = new Error('Rules sheet text is required');
+      err.statusCode = 400;
+      throw err;
+    }
+    mustBeFiniteNumber(amount, 'amount');
+    if (amount < 0) {
+      const err = new Error('amount must be >= 0');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const system =
+      'You are an attorney commission calculator. You must follow the provided rules sheet exactly. ' +
+      'Return ONLY valid JSON (no markdown, no extra text). If the rules are missing/ambiguous, return JSON with error=true and a clear message.';
+
+    const user =
+      `RULES SHEET (authoritative):\n${rulesText}\n\n` +
+      `INPUT:\n` +
+      `- amount_usd: ${amount}\n` +
+      `- user: ${userName}\n` +
+      `- originator: ${originatorName || '(not provided)'}\n` +
+      (context ? `- context: ${context}\n` : '') +
+      `\nTASK:\n` +
+      `1) Select the single best matching rule from the rules sheet and identify its commission percentage.\n` +
+      `2) Compute user_payment = amount_usd * percentage.\n` +
+      `3) Output JSON with numeric fields as numbers (not strings).\n\n` +
+      `OUTPUT JSON SCHEMA:\n` +
+      `{
+` +
+      `  "error": boolean,
+` +
+      `  "error_message": string | null,
+` +
+      `  "rule_applied": string,
+` +
+      `  "percentage": number,            // e.g. 0.35 for 35%
+` +
+      `  "amount_usd": number,
+` +
+      `  "user_payment": number,
+` +
+      `  "calculation": string            // short: e.g. "200000 * 0.35"
+` +
+      `}`;
+
+    const content = await callChatModel({ system, user, temperature: 0 });
+    const out = extractJsonObject(content);
+
+    if (out && out.error) {
+      const err = new Error(out.error_message || 'Rules sheet ambiguous');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const percentage = Number(out.percentage);
+    const userPayment = Number(out.user_payment);
+    mustBeFiniteNumber(percentage, 'percentage');
+    mustBeFiniteNumber(userPayment, 'user_payment');
+
+    res.json({
+      amount_usd: amount,
+      user: userName,
+      originator: originatorName,
+      rule_applied: String(out.rule_applied || ''),
+      percentage,
+      user_payment: userPayment,
+      calculation: String(out.calculation || ''),
+    });
+  } catch (e) {
+    next(e);
+  }
 });
 
-process.on('SIGTERM', async () => {
-    console.log('\n🔄 Shutting down gracefully...');
-    await closeConnection();
-    process.exit(0);
+app.post('/api/commission/originator', async (req, res, next) => {
+  try {
+    const userPayment = Number(req.body.userPayment);
+    const ownOriginationPercent = Number(req.body.ownOriginationPercent);
+    const userName = String(req.body.userName || '').trim();
+    const originatorName = String(req.body.originatorName || '').trim();
+
+    if (!userName || !originatorName) {
+      const err = new Error('User name and originator name are required');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    mustBeFiniteNumber(userPayment, 'userPayment');
+    mustBeFiniteNumber(ownOriginationPercent, 'ownOriginationPercent');
+
+    if (ownOriginationPercent < 0 || ownOriginationPercent > 100) {
+      const err = new Error('ownOriginationPercent must be between 0 and 100');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const samePerson = normalizeName(userName) === normalizeName(originatorName);
+    if (samePerson) {
+      return res.json({
+        user_payment: userPayment,
+        user: userName,
+        originator: originatorName,
+        own_origination_percent: ownOriginationPercent,
+        originator_payment: 0,
+        calculation: 'same person => 0',
+      });
+    }
+
+    const system =
+      'You are an attorney commission calculator. Return ONLY valid JSON (no markdown, no extra text). ' +
+      'Compute originator_payment from the provided user_payment and own origination percent.';
+
+    const user =
+      `INPUT:\n` +
+      `- user_payment_usd: ${userPayment}\n` +
+      `- own_origination_other_work_percent: ${ownOriginationPercent}\n` +
+      `- user: ${userName}\n` +
+      `- originator: ${originatorName}\n\n` +
+      `TASK:\n` +
+      `Compute originator_payment = user_payment_usd * (own_origination_other_work_percent / 100).\n` +
+      `Return JSON with numbers as numbers (not strings).\n\n` +
+      `OUTPUT JSON SCHEMA:\n` +
+      `{
+` +
+      `  "originator_payment": number,
+` +
+      `  "calculation": string            // short: e.g. "70000 * 0.2"
+` +
+      `}`;
+
+    const content = await callChatModel({ system, user, temperature: 0 });
+    const out = extractJsonObject(content);
+
+    const originatorPayment = Number(out.originator_payment);
+    mustBeFiniteNumber(originatorPayment, 'originator_payment');
+
+    res.json({
+      user_payment: userPayment,
+      user: userName,
+      originator: originatorName,
+      own_origination_percent: ownOriginationPercent,
+      originator_payment: originatorPayment,
+      calculation: String(out.calculation || ''),
+    });
+  } catch (e) {
+    next(e);
+  }
 });
 
-startServer();
+// SPA fallback
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Error handler
+app.use((err, req, res, _next) => {
+  const statusCode = err.statusCode || 500;
+  res.status(statusCode).json({
+    error: true,
+    message: err.message || 'Unknown error',
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Attorney Commission Calculator running at http://localhost:${PORT}`);
+});
