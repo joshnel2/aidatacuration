@@ -176,6 +176,11 @@ textarea {
   padding: 0 18px 18px;
 }
 
+.actions--tight {
+  padding: 0;
+  gap: 10px;
+}
+
 .btn {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.06);
@@ -232,6 +237,10 @@ textarea {
 .result__item {
   display: grid;
   gap: 6px;
+}
+
+.result__item--full {
+  grid-column: 1 / -1;
 }
 
 .result__label {

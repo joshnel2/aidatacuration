@@ -9,6 +9,17 @@ const els = {
   rulesText: $('rulesText'),
   context: $('context'),
 
+  rulesFile: $('rulesFile'),
+  saveRulesBtn: $('saveRulesBtn'),
+  rulesStatus: $('rulesStatus'),
+
+  attorneyDataFile: $('attorneyDataFile'),
+  calcBatchBtn: $('calcBatchBtn'),
+  batchStatus: $('batchStatus'),
+  batchResult: $('batchResult'),
+  batchCsv: $('batchCsv'),
+  copyBatchCsvBtn: $('copyBatchCsvBtn'),
+
   calcUserBtn: $('calcUserBtn'),
   userStatus: $('userStatus'),
   userResult: $('userResult'),
@@ -16,6 +27,10 @@ const els = {
   percentage: $('percentage'),
   userPayment: $('userPayment'),
   userCalc: $('userCalc'),
+
+  singleCsvResult: $('singleCsvResult'),
+  singleCsv: $('singleCsv'),
+  copySingleCsvBtn: $('copySingleCsvBtn'),
 
   ownOriginationPercent: $('ownOriginationPercent'),
   eligibility: $('eligibility'),
@@ -79,6 +94,7 @@ function clearResults() {
 
   els.userResult.hidden = true;
   els.originatorResult.hidden = true;
+  if (els.singleCsvResult) els.singleCsvResult.hidden = true;
 
   els.ruleApplied.textContent = '';
   els.percentage.textContent = '';
@@ -87,6 +103,7 @@ function clearResults() {
 
   els.originatorPayment.textContent = '';
   els.originatorCalc.textContent = '';
+  if (els.singleCsv) els.singleCsv.value = '';
 
   setStatus(els.userStatus, '', 'neutral');
   setStatus(els.originatorStatus, '', 'neutral');
@@ -94,6 +111,75 @@ function clearResults() {
   setPill('Waiting for Step 1', 'neutral');
   els.eligibilityNote.textContent = '';
   els.calcOriginatorBtn.disabled = true;
+}
+
+function escapeCsvValue(v) {
+  const s = String(v ?? '');
+  if (/[",\n\r]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
+  return s;
+}
+
+function buildSingleCsv({
+  amountUsd,
+  userName,
+  originatorName,
+  ruleApplied,
+  percentage,
+  userPayment,
+  userCalc,
+  ownOriginationPercent,
+  originatorPayment,
+  originatorCalc,
+}) {
+  const header = [
+    'amount_usd',
+    'user',
+    'originator',
+    'rule_applied',
+    'percentage',
+    'user_payment',
+    'user_calculation',
+    'own_origination_percent',
+    'originator_payment',
+    'originator_calculation',
+  ];
+  const row = {
+    amount_usd: amountUsd,
+    user: userName,
+    originator: originatorName,
+    rule_applied: ruleApplied,
+    percentage,
+    user_payment: userPayment,
+    user_calculation: userCalc,
+    own_origination_percent: ownOriginationPercent ?? '',
+    originator_payment: originatorPayment ?? '',
+    originator_calculation: originatorCalc ?? '',
+  };
+  return [header.join(','), header.map((h) => escapeCsvValue(row[h] ?? '')).join(',')].join('\n');
+}
+
+async function copyToClipboard(text) {
+  const s = String(text || '');
+  try {
+    await navigator.clipboard.writeText(s);
+    return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = s;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'absolute';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      return true;
+    } catch {
+      return false;
+    } finally {
+      document.body.removeChild(ta);
+    }
+  }
 }
 
 function updateEligibility() {
@@ -156,6 +242,49 @@ async function postJson(url, body) {
   return data;
 }
 
+async function loadRules() {
+  try {
+    const r = await fetch('/api/rules');
+    const data = await r.json();
+    if (typeof data?.rulesText === 'string') els.rulesText.value = data.rulesText;
+  } catch {
+    // ignore
+  }
+}
+
+async function onSaveRules() {
+  els.saveRulesBtn.disabled = true;
+  setStatus(els.rulesStatus, 'Saving rules…', 'neutral');
+  try {
+    await postJson('/api/rules', { rulesText: els.rulesText.value || '' });
+    setStatus(els.rulesStatus, 'Rules saved.', 'success');
+  } catch (e) {
+    setStatus(els.rulesStatus, e.message || 'Failed to save rules.', 'error');
+  } finally {
+    els.saveRulesBtn.disabled = false;
+  }
+}
+
+async function onUploadRulesFile() {
+  const file = els.rulesFile.files && els.rulesFile.files[0];
+  if (!file) return;
+  setStatus(els.rulesStatus, 'Uploading rules…', 'neutral');
+  try {
+    const fd = new FormData();
+    fd.append('rulesFile', file);
+    const r = await fetch('/api/rules/upload', { method: 'POST', body: fd });
+    const text = await r.text();
+    const data = JSON.parse(text);
+    if (!r.ok) throw new Error(data?.message || `Upload failed (${r.status})`);
+    els.rulesText.value = data?.rulesText || '';
+    setStatus(els.rulesStatus, 'Rules uploaded and saved.', 'success');
+  } catch (e) {
+    setStatus(els.rulesStatus, e.message || 'Failed to upload rules.', 'error');
+  } finally {
+    els.rulesFile.value = '';
+  }
+}
+
 async function onCalculateUser() {
   clearResults();
 
@@ -174,7 +303,7 @@ async function onCalculateUser() {
     return;
   }
   if (!rulesText) {
-    setStatus(els.userStatus, 'Paste the rules sheet text.', 'error');
+    setStatus(els.userStatus, 'Add rules in the Rules section (upload or type, then save).', 'error');
     return;
   }
 
@@ -204,6 +333,23 @@ async function onCalculateUser() {
     setStatus(els.userStatus, 'User payment calculated.', 'success');
 
     updateEligibility();
+
+    // CSV output (single)
+    if (els.singleCsv) {
+      els.singleCsv.value = buildSingleCsv({
+        amountUsd: amount,
+        userName,
+        originatorName,
+        ruleApplied: data.rule_applied || '',
+        percentage: data.percentage,
+        userPayment: data.user_payment,
+        userCalc: data.calculation || '',
+        ownOriginationPercent: '',
+        originatorPayment: '',
+        originatorCalc: '',
+      });
+      els.singleCsvResult.hidden = false;
+    }
   } catch (e) {
     setStatus(els.userStatus, e.message || 'Failed to calculate user payment.', 'error');
   } finally {
@@ -253,6 +399,23 @@ async function onCalculateOriginator() {
     els.originatorCalc.textContent = data.calculation || '';
     els.originatorResult.hidden = false;
     setStatus(els.originatorStatus, 'Originator payment calculated.', 'success');
+
+    // Update CSV now that originator step is done
+    if (els.singleCsv) {
+      els.singleCsv.value = buildSingleCsv({
+        amountUsd: parseMoney(els.amount.value),
+        userName,
+        originatorName,
+        ruleApplied: state.ruleApplied || '',
+        percentage: state.percentage,
+        userPayment: state.userPayment,
+        userCalc: state.userCalc || '',
+        ownOriginationPercent,
+        originatorPayment: data.originator_payment,
+        originatorCalc: data.calculation || '',
+      });
+      els.singleCsvResult.hidden = false;
+    }
   } catch (e) {
     setStatus(els.originatorStatus, e.message || 'Failed to calculate originator payment.', 'error');
   } finally {
@@ -260,8 +423,59 @@ async function onCalculateOriginator() {
   }
 }
 
+async function onCalculateBatch() {
+  els.batchResult.hidden = true;
+  els.batchCsv.value = '';
+
+  const file = els.attorneyDataFile.files && els.attorneyDataFile.files[0];
+  if (!file) {
+    setStatus(els.batchStatus, 'Upload an attorney data CSV first.', 'error');
+    return;
+  }
+
+  const rulesText = els.rulesText.value.trim();
+  if (!rulesText) {
+    setStatus(els.batchStatus, 'Add rules in the Rules section first.', 'error');
+    return;
+  }
+
+  els.calcBatchBtn.disabled = true;
+  setStatus(els.batchStatus, 'Calculating batch CSV…', 'neutral');
+
+  try {
+    const fd = new FormData();
+    fd.append('attorneyDataFile', file);
+    fd.append('rulesText', rulesText);
+
+    const r = await fetch('/api/calculate/batch', { method: 'POST', body: fd });
+    const text = await r.text();
+    const data = JSON.parse(text);
+    if (!r.ok) throw new Error(data?.message || `Batch failed (${r.status})`);
+
+    els.batchCsv.value = data.csv || '';
+    els.batchResult.hidden = false;
+    setStatus(els.batchStatus, `Batch complete (${data.results_count || 0} rows).`, 'success');
+  } catch (e) {
+    setStatus(els.batchStatus, e.message || 'Failed to calculate batch CSV.', 'error');
+  } finally {
+    els.calcBatchBtn.disabled = false;
+  }
+}
+
 els.calcUserBtn.addEventListener('click', onCalculateUser);
 els.calcOriginatorBtn.addEventListener('click', onCalculateOriginator);
+els.saveRulesBtn.addEventListener('click', onSaveRules);
+els.rulesFile.addEventListener('change', onUploadRulesFile);
+els.calcBatchBtn.addEventListener('click', onCalculateBatch);
+
+els.copySingleCsvBtn.addEventListener('click', async () => {
+  const ok = await copyToClipboard(els.singleCsv.value);
+  setStatus(els.userStatus, ok ? 'CSV copied.' : 'Could not copy CSV.', ok ? 'success' : 'error');
+});
+els.copyBatchCsvBtn.addEventListener('click', async () => {
+  const ok = await copyToClipboard(els.batchCsv.value);
+  setStatus(els.batchStatus, ok ? 'CSV copied.' : 'Could not copy CSV.', ok ? 'success' : 'error');
+});
 
 els.userName.addEventListener('input', updateEligibility);
 els.originatorName.addEventListener('input', updateEligibility);
@@ -273,10 +487,14 @@ els.resetBtn.addEventListener('click', () => {
   els.amount.value = '';
   els.userName.value = '';
   els.originatorName.value = '';
-  els.rulesText.value = '';
   els.context.value = '';
   els.ownOriginationPercent.value = '';
+  els.attorneyDataFile.value = '';
+  setStatus(els.batchStatus, '', 'neutral');
+  els.batchResult.hidden = true;
+  els.batchCsv.value = '';
   clearResults();
 });
 
 clearResults();
+loadRules();

@@ -26,8 +26,68 @@
   <main class="container main">
     <section class="card">
       <div class="card__header">
+        <h2>Rules — Upload / Edit / Save</h2>
+        <p>These rules are saved on the server and are what the AI uses for calculations (unless you override them).</p>
+      </div>
+
+      <div class="grid">
+        <div class="field field--full">
+          <label for="rulesFile">Upload rules file</label>
+          <input id="rulesFile" type="file" accept=".txt,.md,.csv" />
+          <div class="hint">Upload a text-based rules sheet. It will be saved and loaded into the editor below.</div>
+        </div>
+
+        <div class="field field--full">
+          <label for="rulesText">Rules Sheet (saved + editable)</label>
+          <textarea id="rulesText" name="rulesText" rows="10" placeholder="Upload rules or type/edit them here..."></textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="saveRulesBtn" class="btn btn--primary" type="button">Save Rules</button>
+        <div id="rulesStatus" class="status" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__header">
+        <h2>Batch Mode — Upload Attorney Data (CSV) → Get CSV Output</h2>
+        <p>Upload a CSV each time you want to run calculations. You’ll get a CSV result you can copy into a spreadsheet.</p>
+      </div>
+
+      <div class="grid">
+        <div class="field field--full">
+          <label for="attorneyDataFile">Attorney data CSV</label>
+          <input id="attorneyDataFile" type="file" accept=".csv,text/csv" />
+          <div class="hint">
+            Required headers: <code>amount_usd</code>, <code>user</code>. Optional: <code>originator</code>, <code>context</code>,
+            <code>own_origination_percent</code>.
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="calcBatchBtn" class="btn btn--primary" type="button">Calculate CSV (Batch)</button>
+        <div id="batchStatus" class="status" aria-live="polite"></div>
+      </div>
+
+      <div id="batchResult" class="result" hidden>
+        <div class="result__grid">
+          <div class="result__item result__item--full">
+            <div class="result__label">CSV output</div>
+            <textarea id="batchCsv" class="result__value result__value--mono" rows="10" readonly></textarea>
+            <div class="actions actions--tight">
+              <button id="copyBatchCsvBtn" class="btn btn--ghost" type="button">Copy CSV</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__header">
         <h2>Step 1 — Calculate User Payment</h2>
-        <p>Paste your rules sheet, enter the amount, and we’ll select the matching rule and calculate the user commission.</p>
+        <p>Enter the amount and names. Step 1 uses the saved Rules Sheet above.</p>
       </div>
 
       <div class="grid">
@@ -46,11 +106,6 @@
           <label for="originatorName">Originator</label>
           <input id="originatorName" name="originatorName" placeholder="Jane Smith" />
           <div class="hint">If originator is the same person as user, originator payment will be $0.</div>
-        </div>
-
-        <div class="field field--full">
-          <label for="rulesText">Rules Sheet (paste text)</label>
-          <textarea id="rulesText" name="rulesText" rows="10" placeholder="Paste your commission rules here..."></textarea>
         </div>
 
         <div class="field field--full">
@@ -81,6 +136,18 @@
           <div class="result__item">
             <div class="result__label">Calculation</div>
             <div id="userCalc" class="result__value result__value--mono"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="singleCsvResult" class="result" hidden>
+        <div class="result__grid">
+          <div class="result__item result__item--full">
+            <div class="result__label">CSV output (single)</div>
+            <textarea id="singleCsv" class="result__value result__value--mono" rows="4" readonly></textarea>
+            <div class="actions actions--tight">
+              <button id="copySingleCsvBtn" class="btn btn--ghost" type="button">Copy CSV</button>
+            </div>
           </div>
         </div>
       </div>
@@ -127,7 +194,7 @@
 
     <footer class="footer">
       <div class="footer__note">
-        The model is instructed to return JSON-only and to treat your pasted rules sheet as authoritative.
+        The models are instructed to return JSON-only and to treat your saved Rules Sheet as authoritative.
       </div>
     </footer>
   </main>
