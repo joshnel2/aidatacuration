@@ -352,6 +352,36 @@ const upload = multer({
   },
 });
 
+function safeJsonStringify(obj, maxLen = 24000) {
+  let s;
+  try {
+    s = JSON.stringify(obj, null, 2);
+  } catch {
+    s = String(obj ?? '');
+  }
+  if (s.length <= maxLen) return s;
+  return `${s.slice(0, maxLen)}\n... (truncated)`;
+}
+
+function compactRowDataForPrompt(row, maxValueLen = 200) {
+  const out = {};
+  for (const [k, v] of Object.entries(row || {})) {
+    let s;
+    if (v == null) s = '';
+    else if (typeof v === 'string') s = v;
+    else {
+      try {
+        s = JSON.stringify(v);
+      } catch {
+        s = String(v);
+      }
+    }
+    s = String(s);
+    out[k] = s.length > maxValueLen ? `${s.slice(0, maxValueLen)}…` : s;
+  }
+  return out;
+}
+
 app.post('/api/rules/upload', upload.single('rulesFile'), async (req, res, next) => {
   try {
     if (!req.file) {
@@ -509,6 +539,141 @@ function toNumberOrNaN(v) {
   return Number(cleaned);
 }
 
+function normalizeKey(s) {
+  return String(s || '').trim().toLowerCase();
+}
+
+function findColumnKey(obj, predicate) {
+  const keys = Object.keys(obj || {});
+  for (const k of keys) {
+    if (predicate(k)) return k;
+  }
+  return null;
+}
+
+function detectFieldsFromRow(row) {
+  const entries = Object.entries(row || {});
+  const lowerKeys = entries.map(([k]) => normalizeKey(k));
+  const keyMap = new Map(lowerKeys.map((lk, i) => [lk, entries[i][0]]));
+
+  const getByIncludesAny = (needles) => {
+    for (const lk of lowerKeys) {
+      if (needles.some((n) => lk.includes(n))) return keyMap.get(lk);
+    }
+    return null;
+  };
+
+  const amountKey =
+    getByIncludesAny(['amount_usd']) ||
+    getByIncludesAny(['amount', 'fee', 'revenue', 'collected', 'settlement', 'total']) ||
+    null;
+
+  const userKey = getByIncludesAny(['user']) || getByIncludesAny(['attorney', 'lawyer', 'employee', 'assigned']) || null;
+
+  const originatorKey =
+    getByIncludesAny(['originator']) || getByIncludesAny(['originating', 'origination', 'source']) || null;
+
+  const contextKey =
+    getByIncludesAny(['context']) || getByIncludesAny(['notes', 'note', 'matter', 'case', 'practice', 'team', 'exception']) || null;
+
+  const ownOriginationPercentKey =
+    getByIncludesAny(['own_origination_percent']) ||
+    getByIncludesAny(['own origination', 'origination percent', 'originator percent', 'origination %', 'originator %']) ||
+    null;
+
+  let amount = toNumberOrNaN(amountKey ? row[amountKey] : undefined);
+  if (!Number.isFinite(amount)) {
+    const candidate = findColumnKey(row, (k) => {
+      const lk = normalizeKey(k);
+      if (!lk.includes('amount') && !lk.includes('fee') && !lk.includes('revenue') && !lk.includes('collected') && !lk.includes('total'))
+        return false;
+      return Number.isFinite(toNumberOrNaN(row[k]));
+    });
+    if (candidate) amount = toNumberOrNaN(row[candidate]);
+  }
+
+  const user = String(userKey ? row[userKey] : '').trim();
+  const originatorRaw = String(originatorKey ? row[originatorKey] : '').trim();
+  const originator = originatorRaw || user; // default missing originator to user
+  const context = String(contextKey ? row[contextKey] : '').trim();
+
+  let ownOriginationPercent = toNumberOrNaN(ownOriginationPercentKey ? row[ownOriginationPercentKey] : undefined);
+  if (!Number.isFinite(ownOriginationPercent)) ownOriginationPercent = NaN;
+
+  return { amount, user, originator, context, ownOriginationPercent };
+}
+
+async function calculateUserPaymentFromRow({ amount, userName, originatorName, rulesText, rowData }) {
+  if (!userName) {
+    const err = new Error('User name is required');
+    err.statusCode = 400;
+    throw err;
+  }
+  if (!rulesText) {
+    const err = new Error('Rules sheet text is required');
+    err.statusCode = 400;
+    throw err;
+  }
+  mustBeFiniteNumber(amount, 'amount');
+  if (amount < 0) {
+    const err = new Error('amount must be >= 0');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const system =
+    'You are AI #1: the user commission calculator. You must follow the provided Rules Sheet exactly. ' +
+    'You MUST examine ALL fields in the provided payment row data when selecting the best matching rule. ' +
+    'Return ONLY valid JSON (no markdown, no extra text). If the rules are missing/ambiguous, return JSON with error=true and a clear message.';
+
+  const user =
+    `RULES SHEET (authoritative):\n${rulesText}\n\n` +
+    `PAYMENT ROW DATA (all columns; use this to match rules):\n${safeJsonStringify(compactRowDataForPrompt(rowData))}\n\n` +
+    `INPUT (canonicalized):\n` +
+    `- amount_usd: ${amount}\n` +
+    `- user: ${userName}\n` +
+    `- originator: ${originatorName || '(not provided)'}\n\n` +
+    `TASK:\n` +
+    `1) Select the single best matching rule from the Rules Sheet.\n` +
+    `2) Identify the commission percentage for the USER (as a decimal, e.g. 0.35 for 35%).\n` +
+    `3) Compute user_payment = amount_usd * percentage.\n` +
+    `4) Output JSON with numeric fields as numbers (not strings).\n\n` +
+    `OUTPUT JSON SCHEMA:\n` +
+    `{
+  "error": boolean,
+  "error_message": string | null,
+  "rule_applied": string,
+  "percentage": number,
+  "amount_usd": number,
+  "user_payment": number,
+  "calculation": string
+}`;
+
+  const content = await callChatModel({ system, user, temperature: 0 });
+  const out = extractJsonObject(content);
+
+  if (out && out.error) {
+    const err = new Error(out.error_message || 'Rules sheet ambiguous');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const percentage = Number(out.percentage);
+  const userPayment = Number(out.user_payment);
+  mustBeFiniteNumber(percentage, 'percentage');
+  mustBeFiniteNumber(userPayment, 'user_payment');
+
+  return {
+    amount_usd: amount,
+    user: userName,
+    originator: originatorName,
+    rule_applied: String(out.rule_applied || ''),
+    percentage,
+    user_payment: userPayment,
+    calculation: String(out.calculation || ''),
+  };
+}
+
 app.post(
   '/api/calculate/batch',
   upload.fields([
@@ -636,6 +801,163 @@ app.post(
       const csv = lines.join('\n');
 
       res.json({ csv, results_count: results.length });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+app.post(
+  '/api/flow/run',
+  upload.fields([
+    { name: 'rulesFile', maxCount: 1 },
+    { name: 'paymentFile', maxCount: 1 },
+  ]),
+  async (req, res, next) => {
+    try {
+      const rulesFile = req.files?.rulesFile?.[0];
+      const paymentFile = req.files?.paymentFile?.[0];
+      if (!rulesFile) {
+        const err = new Error('rulesFile is required');
+        err.statusCode = 400;
+        throw err;
+      }
+      if (!paymentFile) {
+        const err = new Error('paymentFile is required');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const rulesText = String(rulesFile.buffer.toString('utf8') || '').trim();
+      if (!rulesText) {
+        const err = new Error('Rules sheet file was empty');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const paymentText = paymentFile.buffer.toString('utf8');
+      const filename = String(paymentFile.originalname || '').toLowerCase();
+      const contentType = String(paymentFile.mimetype || '').toLowerCase();
+
+      let records = [];
+      if (filename.endsWith('.csv') || contentType.includes('csv')) {
+        records = parseCsv(paymentText).records;
+      } else if (filename.endsWith('.json') || contentType.includes('json')) {
+        const parsed = JSON.parse(paymentText);
+        if (Array.isArray(parsed)) records = parsed;
+        else if (parsed && typeof parsed === 'object') records = [parsed];
+      } else {
+        // Default: attempt CSV first, fallback to 1-row key/value text.
+        const maybe = parseCsv(paymentText);
+        if (maybe.records?.length) records = maybe.records;
+        else {
+          const obj = {};
+          for (const line of String(paymentText || '').split(/\r?\n/)) {
+            const s = line.trim();
+            if (!s) continue;
+            const idx = s.indexOf(':');
+            if (idx > 0) obj[s.slice(0, idx).trim()] = s.slice(idx + 1).trim();
+            else obj[`field_${Object.keys(obj).length + 1}`] = s;
+          }
+          if (Object.keys(obj).length) records = [obj];
+        }
+      }
+
+      if (!records.length) {
+        const err = new Error('No rows found in payment file');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const results = [];
+      for (let idx = 0; idx < records.length; idx += 1) {
+        const row = records[idx] || {};
+        const detected = detectFieldsFromRow(row);
+
+        if (!Number.isFinite(detected.amount) || detected.amount < 0 || !detected.user) {
+          results.push({
+            row_number: idx + 2,
+            error: true,
+            error_message: 'Could not detect amount_usd (>= 0) and user from this row',
+          });
+          continue;
+        }
+
+        try {
+          // AI #1 must fully complete first
+          const userOut = await calculateUserPaymentFromRow({
+            amount: detected.amount,
+            userName: detected.user,
+            originatorName: detected.originator,
+            rulesText,
+            rowData: row,
+          });
+
+          // AI #2 only when originator != user (and percent present)
+          const same = normalizeName(detected.originator) === normalizeName(detected.user);
+          let originatorOut = null;
+          if (!same && Number.isFinite(detected.ownOriginationPercent)) {
+            originatorOut = await calculateOriginatorPaymentWithAi({
+              userPayment: userOut.user_payment,
+              ownOriginationPercent: detected.ownOriginationPercent,
+              userName: detected.user,
+              originatorName: detected.originator,
+            });
+          }
+
+          results.push({
+            row_number: idx + 2,
+            error: false,
+            amount_usd: userOut.amount_usd,
+            user: userOut.user,
+            originator: detected.originator,
+            rule_applied: userOut.rule_applied,
+            percentage: userOut.percentage,
+            user_payment: userOut.user_payment,
+            user_calculation: userOut.calculation,
+            own_origination_percent: Number.isFinite(detected.ownOriginationPercent) ? detected.ownOriginationPercent : '',
+            originator_payment: originatorOut ? originatorOut.originator_payment : same ? 0 : '',
+            originator_calculation: originatorOut ? originatorOut.calculation : same ? 'same person => 0' : '',
+            warning:
+              originatorOut?.warning ||
+              (!same && !Number.isFinite(detected.ownOriginationPercent) ? 'Missing own origination % for originator calculation.' : ''),
+          });
+        } catch (e) {
+          results.push({
+            row_number: idx + 2,
+            error: true,
+            error_message: e.message || 'Failed to calculate row',
+          });
+        }
+      }
+
+      const header = [
+        'row_number',
+        'error',
+        'error_message',
+        'amount_usd',
+        'user',
+        'originator',
+        'rule_applied',
+        'percentage',
+        'user_payment',
+        'user_calculation',
+        'own_origination_percent',
+        'originator_payment',
+        'originator_calculation',
+        'warning',
+      ];
+
+      const lines = [header.join(',')];
+      for (const r of results) {
+        lines.push(header.map((h) => escapeCsvValue(r[h] ?? '')).join(','));
+      }
+
+      res.json({
+        results_count: results.length,
+        preview_first_row: results.find((r) => !r.error) || null,
+        csv: lines.join('\n'),
+      });
     } catch (e) {
       next(e);
     }
