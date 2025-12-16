@@ -26,101 +26,38 @@
   <main class="container main">
     <section class="card">
       <div class="card__header">
-        <h2>Rules — Upload / Edit / Save</h2>
-        <p>These rules are saved on the server and are what the AI uses for calculations (unless you override them).</p>
+        <h2>Upload Rules + Upload Payment Info → Calculate</h2>
+        <p>Upload the rules sheet and the payment information. The app runs AI #1 to calculate the user payment first, then runs AI #2 for the originator only if the originator is different from the user.</p>
       </div>
 
       <div class="grid">
         <div class="field field--full">
-          <label for="rulesFile">Upload rules file</label>
-          <input id="rulesFile" type="file" accept=".txt,.md,.csv" />
-          <div class="hint">Upload a text-based rules sheet. It will be saved and loaded into the editor below.</div>
+          <label for="rulesFile">Rules sheet file</label>
+          <input id="rulesFile" type="file" accept=".txt,.md,.csv,.json,text/plain,text/csv,application/json" />
+          <div class="hint">Text-based rules sheet (the rules are treated as authoritative for user payment).</div>
         </div>
 
         <div class="field field--full">
-          <label for="rulesText">Rules Sheet (saved + editable)</label>
-          <textarea id="rulesText" name="rulesText" rows="10" placeholder="Upload rules or type/edit them here..."></textarea>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="saveRulesBtn" class="btn btn--primary" type="button">Save Rules</button>
-        <div id="rulesStatus" class="status" aria-live="polite"></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card__header">
-        <h2>Batch Mode — Upload Attorney Data (CSV) → Get CSV Output</h2>
-        <p>Upload a CSV each time you want to run calculations. You’ll get a CSV result you can copy into a spreadsheet.</p>
-      </div>
-
-      <div class="grid">
-        <div class="field field--full">
-          <label for="attorneyDataFile">Attorney data CSV</label>
-          <input id="attorneyDataFile" type="file" accept=".csv,text/csv" />
+          <label for="paymentFile">Payment information file</label>
+          <input id="paymentFile" type="file" accept=".txt,.md,.csv,.json,text/plain,text/csv,application/json" />
           <div class="hint">
-            Required headers: <code>amount_usd</code>, <code>user</code>. Optional: <code>originator</code>, <code>context</code>,
-            <code>own_origination_percent</code>.
+            Provide the payment info in text/CSV/JSON. Include at least <code>amount_usd</code> and <code>user</code>. Optional:
+            <code>originator</code>, <code>context</code>, <code>own_origination_percent</code>.
           </div>
         </div>
       </div>
 
       <div class="actions">
-        <button id="calcBatchBtn" class="btn btn--primary" type="button">Calculate CSV (Batch)</button>
-        <div id="batchStatus" class="status" aria-live="polite"></div>
+        <button id="runFlowBtn" class="btn btn--primary" type="button">Calculate Payments</button>
+        <div id="flowStatus" class="status" aria-live="polite"></div>
       </div>
 
-      <div id="batchResult" class="result" hidden>
+      <div id="flowResult" class="result" hidden>
         <div class="result__grid">
           <div class="result__item result__item--full">
-            <div class="result__label">CSV output</div>
-            <textarea id="batchCsv" class="result__value result__value--mono" rows="10" readonly></textarea>
-            <div class="actions actions--tight">
-              <button id="copyBatchCsvBtn" class="btn btn--ghost" type="button">Copy CSV</button>
-            </div>
+            <div class="result__label">Parsed payment info</div>
+            <div id="parsedInfo" class="result__value result__value--mono"></div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card__header">
-        <h2>Step 1 — Calculate User Payment</h2>
-        <p>Enter the amount and names. Step 1 uses the saved Rules Sheet above.</p>
-      </div>
-
-      <div class="grid">
-        <div class="field">
-          <label for="amount">Amount (USD)</label>
-          <input id="amount" name="amount" inputmode="decimal" placeholder="200000" />
-          <div class="hint">Tip: you can type <code>200000</code> or <code>$200,000</code>.</div>
-        </div>
-
-        <div class="field">
-          <label for="userName">User</label>
-          <input id="userName" name="userName" placeholder="John Doe" />
-        </div>
-
-        <div class="field">
-          <label for="originatorName">Originator</label>
-          <input id="originatorName" name="originatorName" placeholder="Jane Smith" />
-          <div class="hint">If originator is the same person as user, originator payment will be $0.</div>
-        </div>
-
-        <div class="field field--full">
-          <label for="context">Optional Context</label>
-          <textarea id="context" name="context" rows="3" placeholder="Optional: case type, team, exceptions, etc."></textarea>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="calcUserBtn" class="btn btn--primary" type="button">Calculate User Payment</button>
-        <div id="userStatus" class="status" aria-live="polite"></div>
-      </div>
-
-      <div id="userResult" class="result" hidden>
-        <div class="result__grid">
           <div class="result__item">
             <div class="result__label">Rule applied</div>
             <div id="ruleApplied" class="result__value result__value--mono"></div>
@@ -137,55 +74,17 @@
             <div class="result__label">Calculation</div>
             <div id="userCalc" class="result__value result__value--mono"></div>
           </div>
-        </div>
-      </div>
-
-      <div id="singleCsvResult" class="result" hidden>
-        <div class="result__grid">
-          <div class="result__item result__item--full">
-            <div class="result__label">CSV output (single)</div>
-            <textarea id="singleCsv" class="result__value result__value--mono" rows="4" readonly></textarea>
-            <div class="actions actions--tight">
-              <button id="copySingleCsvBtn" class="btn btn--ghost" type="button">Copy CSV</button>
-            </div>
+          <div class="result__item">
+            <div class="result__label">Originator eligibility</div>
+            <div id="eligibility" class="pill pill--neutral">Waiting</div>
+            <div id="eligibilityNote" class="hint"></div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card__header">
-        <h2>Step 2 — Calculate Originator Payment</h2>
-        <p>This uses the already-calculated <strong>user payment</strong>. It only applies when the originator is <strong>not</strong> the user.</p>
-      </div>
-
-      <div class="grid">
-        <div class="field">
-          <label for="ownOriginationPercent">Own origination other work %</label>
-          <input id="ownOriginationPercent" name="ownOriginationPercent" inputmode="decimal" placeholder="20" />
-          <div class="hint">Example: 20 means 20% of the user payment.</div>
-        </div>
-
-        <div class="field">
-          <label>Originator eligibility</label>
-          <div id="eligibility" class="pill pill--neutral">Waiting for Step 1</div>
-          <div id="eligibilityNote" class="hint"></div>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="calcOriginatorBtn" class="btn btn--primary" type="button" disabled>Calculate Originator Payment</button>
-        <div id="originatorStatus" class="status" aria-live="polite"></div>
-      </div>
-
-      <div id="originatorResult" class="result" hidden>
-        <div class="result__grid">
           <div class="result__item">
             <div class="result__label">Originator payment</div>
             <div id="originatorPayment" class="result__value result__value--strong"></div>
           </div>
-          <div class="result__item">
-            <div class="result__label">Calculation</div>
+          <div class="result__item result__item--full">
+            <div class="result__label">Originator calculation</div>
             <div id="originatorCalc" class="result__value result__value--mono"></div>
           </div>
         </div>
@@ -194,7 +93,7 @@
 
     <footer class="footer">
       <div class="footer__note">
-        The models are instructed to return JSON-only and to treat your saved Rules Sheet as authoritative.
+        The models are instructed to return JSON-only and to treat your uploaded Rules Sheet as authoritative.
       </div>
     </footer>
   </main>
