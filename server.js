@@ -157,6 +157,13 @@ async function callChatModel({ system, user, temperature = 0 }) {
   throw err;
 }
 
+function isModelConfigured() {
+  return Boolean(
+    (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_API_KEY && process.env.AZURE_OPENAI_DEPLOYMENT) ||
+      (process.env.AZURE_AI_FOUNDRY_CHAT_COMPLETIONS_URL && process.env.AZURE_AI_FOUNDRY_API_KEY)
+  );
+}
+
 async function calculateUserPayment({ amount, userName, originatorName, rulesText, context, attorneyDataText }) {
   if (!userName) {
     const err = new Error('User name is required');
@@ -815,6 +822,14 @@ app.post(
   ]),
   async (req, res, next) => {
     try {
+      if (!isModelConfigured()) {
+        const err = new Error(
+          'Azure model credentials not configured. Set AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY + AZURE_OPENAI_DEPLOYMENT. (Optional fallback: AZURE_AI_FOUNDRY_CHAT_COMPLETIONS_URL + AZURE_AI_FOUNDRY_API_KEY.)'
+        );
+        err.statusCode = 500;
+        throw err;
+      }
+
       const rulesFile = req.files?.rulesFile?.[0];
       const paymentFile = req.files?.paymentFile?.[0];
       if (!rulesFile) {
